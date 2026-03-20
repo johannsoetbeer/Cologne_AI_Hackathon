@@ -1,64 +1,139 @@
-import React, { useState } from 'react';
-import { 
-  BookOpen, 
-  Folder, 
-  Plus, 
-  UploadCloud, 
-  FileText, 
-  CheckCircle, 
-  Download, 
-  BrainCircuit, 
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  BookOpen,
+  Folder,
+  Plus,
+  UploadCloud,
+  FileText,
+  CheckCircle,
+  Download,
+  BrainCircuit,
   PieChart,
   Loader2,
   ChevronRight,
   Library,
-  FileBadge
+  FileBadge,
+  AlertCircle,
+  Clock,
+  Sparkles,
 } from 'lucide-react';
-
-type Subject = {
-  id: number;
-  name: string;
-};
+import {
+  fetchCourses,
+  createCourse,
+  fetchKnowledge,
+  uploadKnowledge,
+  fetchExams,
+  generateExam,
+  submitFeedback,
+  type Course,
+  type KnowledgeEntry,
+  type GeneratedExam,
+  type FeedbackResult,
+} from './api';
 
 type Tab = 'database' | 'generator' | 'feedback';
 
-const mockSubjects: Subject[] = [
-  { id: 1, name: "Mathematik 1" },
-  { id: 2, name: "Betriebswirtschaftslehre" }
-];
-
-const mockFiles = [
-  { id: 1, name: "PDF_Skript_Vorlesung_1.pdf", status: "Verarbeitet" },
-  { id: 2, name: "Altklausur_WS22.pdf", status: "Verarbeitet" },
-];
-
 export default function App() {
-  const [subjects, setSubjects] = useState<Subject[]>(mockSubjects);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [activeSubjectId, setActiveSubjectId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('database');
   const [isAddingSubject, setIsAddingSubject] = useState(false);
-  const [newSubjectName, setNewSubjectName] = useState("");
+  const [newSubjectName, setNewSubjectName] = useState('');
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const activeSubject = subjects.find(s => s.id === activeSubjectId) || null;
+  // Data per active subject
+  const [knowledge, setKnowledge] = useState<KnowledgeEntry[]>([]);
+  const [exams, setExams] = useState<GeneratedExam[]>([]);
 
-  const handleAddSubject = (e: React.FormEvent) => {
+  const activeSubject = courses.find((s) => s.id === activeSubjectId) || null;
+
+  // Load courses on mount
+  useEffect(() => {
+    loadCourses();
+  }, []);
+
+  const loadCourses = async () => {
+    setIsLoadingCourses(true);
+    try {
+      const data = await fetchCourses();
+      setCourses(data);
+      setError(null);
+    } catch (err) {
+      setError('Verbindung zum Server fehlgeschlagen. Läuft der Backend-Server?');
+      console.error(err);
+    } finally {
+      setIsLoadingCourses(false);
+    }
+  };
+
+  // Load data when active subject changes
+  const loadSubjectData = useCallback(async (courseId: number) => {
+    try {
+      const [knowledgeData, examsData] = await Promise.all([
+        fetchKnowledge(courseId),
+        fetchExams(courseId),
+      ]);
+      setKnowledge(knowledgeData);
+      setExams(examsData);
+    } catch (err) {
+      console.error('Error loading subject data:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeSubjectId) {
+      loadSubjectData(activeSubjectId);
+    } else {
+      setKnowledge([]);
+      setExams([]);
+    }
+  }, [activeSubjectId, loadSubjectData]);
+
+  const handleSelectSubject = (id: number) => {
+    setActiveSubjectId(id);
+    setActiveTab('database');
+  };
+
+  const handleAddSubject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSubjectName.trim()) return;
-    
-    const newSubject: Subject = {
-      id: Date.now(),
-      name: newSubjectName.trim()
-    };
-    
-    setSubjects([...subjects, newSubject]);
-    setNewSubjectName("");
-    setIsAddingSubject(false);
-    setActiveSubjectId(newSubject.id);
+
+    try {
+      const newCourse = await createCourse(newSubjectName.trim());
+      setCourses((prev) => [newCourse, ...prev]);
+      setNewSubjectName('');
+      setIsAddingSubject(false);
+      setActiveSubjectId(newCourse.id);
+      setActiveTab('database');
+    } catch (err) {
+      console.error('Error creating course:', err);
+      setError('Fach konnte nicht erstellt werden');
+    }
+  };
+
+  const refreshKnowledge = async () => {
+    if (!activeSubjectId) return;
+    try {
+      const data = await fetchKnowledge(activeSubjectId);
+      setKnowledge(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const refreshExams = async () => {
+    if (!activeSubjectId) return;
+    try {
+      const data = await fetchExams(activeSubjectId);
+      setExams(data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
     <div className="flex h-screen bg-gray-50 text-slate-900 font-sans overflow-hidden selection:bg-indigo-100 selection:text-indigo-900">
-      
       {/* SIDEBAR */}
       <aside className="w-72 bg-white border-r border-slate-200 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-10">
         <div className="p-6 border-b border-slate-100 flex items-center gap-3">
@@ -66,7 +141,7 @@ export default function App() {
             <BookOpen className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent tracking-tight">
-            Exam Acer
+            University Acer
           </h1>
         </div>
 
@@ -74,29 +149,44 @@ export default function App() {
           <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-3">
             Meine Fächer
           </div>
-          
-          {subjects.map(subject => (
-            <button
-              key={subject.id}
-              onClick={() => setActiveSubjectId(subject.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-left ${
-                activeSubjectId === subject.id 
-                  ? 'bg-indigo-50 text-indigo-700 font-medium shadow-sm' 
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-            >
-              <Folder className={`w-5 h-5 ${activeSubjectId === subject.id ? 'text-indigo-600' : 'text-slate-400'}`} />
-              <span className="truncate">{subject.name}</span>
-              {activeSubjectId === subject.id && (
-                <ChevronRight className="w-4 h-4 ml-auto text-indigo-400" />
-              )}
-            </button>
-          ))}
+
+          {isLoadingCourses ? (
+            <div className="flex items-center gap-2 px-3 py-4 text-slate-400">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">Lade Fächer...</span>
+            </div>
+          ) : courses.length === 0 ? (
+            <p className="text-sm text-slate-400 px-3 py-4 text-center">
+              Noch keine Fächer angelegt.
+            </p>
+          ) : (
+            courses.map((subject) => (
+              <button
+                key={subject.id}
+                onClick={() => handleSelectSubject(subject.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-left ${
+                  activeSubjectId === subject.id
+                    ? 'bg-indigo-50 text-indigo-700 font-medium shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <Folder
+                  className={`w-5 h-5 shrink-0 ${
+                    activeSubjectId === subject.id ? 'text-indigo-600' : 'text-slate-400'
+                  }`}
+                />
+                <span className="truncate">{subject.name}</span>
+                {activeSubjectId === subject.id && (
+                  <ChevronRight className="w-4 h-4 ml-auto text-indigo-400" />
+                )}
+              </button>
+            ))
+          )}
         </div>
 
         <div className="p-4 border-t border-slate-100 bg-slate-50/50">
           {isAddingSubject ? (
-            <form onSubmit={handleAddSubject} className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <form onSubmit={handleAddSubject} className="space-y-3">
               <input
                 type="text"
                 autoFocus
@@ -135,25 +225,37 @@ export default function App() {
 
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
-        {/* Background purely for aesthetics */}
         <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-30 pointer-events-none" />
 
+        {/* Error Banner */}
+        {error && (
+          <div className="relative z-20 mx-10 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-3 text-sm">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <span>{error}</span>
+            <button onClick={() => { setError(null); loadCourses(); }} className="ml-auto text-red-500 hover:text-red-700 font-medium">
+              Erneut versuchen
+            </button>
+          </div>
+        )}
+
         {!activeSubject ? (
-          // DASHBOARD (No subject selected)
-          <div className="flex-1 flex flex-col items-center justify-center p-8 z-10 animate-in fade-in duration-500">
+          /* DASHBOARD */
+          <div className="flex-1 flex flex-col items-center justify-center p-8 z-10">
             <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-6 shadow-inner">
               <BookOpen className="w-10 h-10 text-indigo-500" />
             </div>
-            <h2 className="text-3xl font-bold text-slate-800 mb-3 tracking-tight">Willkommen bei Exam Acer!</h2>
+            <h2 className="text-3xl font-bold text-slate-800 mb-3 tracking-tight">
+              Willkommen bei University Acer!
+            </h2>
             <p className="text-slate-500 mb-10 max-w-md text-center text-lg leading-relaxed">
               Wähle ein Fach aus der Seitenleiste oder lege ein neues an, um mit deiner Vorbereitung zu starten.
             </p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-4xl">
-              {subjects.map(subject => (
+              {courses.map((subject) => (
                 <button
                   key={subject.id}
-                  onClick={() => setActiveSubjectId(subject.id)}
+                  onClick={() => handleSelectSubject(subject.id)}
                   className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-indigo-200 transition-all duration-300 text-left group"
                 >
                   <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-indigo-600 transition-colors duration-300">
@@ -166,51 +268,61 @@ export default function App() {
             </div>
           </div>
         ) : (
-          // SUBJECT VIEW
+          /* SUBJECT VIEW */
           <div className="flex-1 flex flex-col z-10 overflow-hidden">
             <header className="px-10 py-8 bg-white/50 backdrop-blur-sm border-b border-slate-200/50">
               <div className="flex items-center gap-3 text-sm font-medium text-slate-500 mb-2">
                 <Folder className="w-4 h-4" />
-                <span>Meine Fächer</span>
+                <button onClick={() => setActiveSubjectId(null)} className="hover:text-indigo-500 transition-colors">
+                  Meine Fächer
+                </button>
                 <ChevronRight className="w-4 h-4" />
                 <span className="text-indigo-600">{activeSubject.name}</span>
               </div>
-              <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">{activeSubject.name}</h2>
+              <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">
+                {activeSubject.name}
+              </h2>
             </header>
 
-            {/* Tabs Navigation */}
+            {/* Tabs */}
             <div className="px-10 border-b border-slate-200 bg-white/30 backdrop-blur-md">
               <div className="flex gap-8">
-                <TabButton 
-                  active={activeTab === 'database'} 
-                  onClick={() => setActiveTab('database')}
-                  icon={<Library className="w-4 h-4" />}
-                >
+                <TabButton active={activeTab === 'database'} onClick={() => setActiveTab('database')} icon={<Library className="w-4 h-4" />}>
                   Wissensdatenbank
                 </TabButton>
-                <TabButton 
-                  active={activeTab === 'generator'} 
-                  onClick={() => setActiveTab('generator')}
-                  icon={<BrainCircuit className="w-4 h-4" />}
-                >
+                <TabButton active={activeTab === 'generator'} onClick={() => setActiveTab('generator')} icon={<BrainCircuit className="w-4 h-4" />}>
                   Klausur-Generator
                 </TabButton>
-                <TabButton 
-                  active={activeTab === 'feedback'} 
-                  onClick={() => setActiveTab('feedback')}
-                  icon={<FileBadge className="w-4 h-4" />}
-                >
+                <TabButton active={activeTab === 'feedback'} onClick={() => setActiveTab('feedback')} icon={<FileBadge className="w-4 h-4" />}>
                   Korrektur & Feedback
                 </TabButton>
               </div>
             </div>
 
-            {/* Tab Content Area */}
+            {/* Tab Content */}
             <div className="flex-1 overflow-y-auto p-10">
               <div className="max-w-4xl mx-auto">
-                {activeTab === 'database' && <DatabaseTab />}
-                {activeTab === 'generator' && <GeneratorTab />}
-                {activeTab === 'feedback' && <FeedbackTab />}
+                {activeTab === 'database' && (
+                  <DatabaseTab
+                    courseId={activeSubject.id}
+                    knowledge={knowledge}
+                    onRefresh={refreshKnowledge}
+                  />
+                )}
+                {activeTab === 'generator' && (
+                  <GeneratorTab
+                    courseId={activeSubject.id}
+                    courseName={activeSubject.name}
+                    exams={exams}
+                    onRefresh={refreshExams}
+                  />
+                )}
+                {activeTab === 'feedback' && (
+                  <FeedbackTab
+                    courseId={activeSubject.id}
+                    exams={exams}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -220,7 +332,20 @@ export default function App() {
   );
 }
 
-function TabButton({ children, active, onClick, icon }: { children: React.ReactNode, active: boolean, onClick: () => void, icon?: React.ReactNode }) {
+// ==========================================
+// Tab Button
+// ==========================================
+function TabButton({
+  children,
+  active,
+  onClick,
+  icon,
+}: {
+  children: React.ReactNode;
+  active: boolean;
+  onClick: () => void;
+  icon?: React.ReactNode;
+}) {
   return (
     <button
       onClick={onClick}
@@ -231,78 +356,233 @@ function TabButton({ children, active, onClick, icon }: { children: React.ReactN
       {icon}
       {children}
       {active && (
-        <span className="absolute bottom-0 left-0 right-0 height-[2px] h-[2px] bg-indigo-600 rounded-t-full shadow-[0_-2px_8px_rgba(79,70,229,0.5)]" />
+        <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-600 rounded-t-full shadow-[0_-2px_8px_rgba(79,70,229,0.5)]" />
       )}
     </button>
   );
 }
 
-function DatabaseTab() {
+// ==========================================
+// Tab 1: Wissensdatenbank
+// ==========================================
+function DatabaseTab({
+  courseId,
+  knowledge,
+  onRefresh,
+}: {
+  courseId: number;
+  knowledge: KnowledgeEntry[];
+  onRefresh: () => void;
+}) {
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleUpload = async (file: File) => {
+    setIsUploading(true);
+    setUploadStatus('KI analysiert Dokument...');
+
+    try {
+      await uploadKnowledge(courseId, file);
+      setUploadStatus('Erfolgreich verarbeitet!');
+      onRefresh();
+      setTimeout(() => setUploadStatus(null), 3000);
+    } catch (err) {
+      setUploadStatus('Fehler: ' + (err instanceof Error ? err.message : 'Upload fehlgeschlagen'));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleUpload(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleUpload(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => setIsDragging(false);
+
+  const getStatusBadge = (status: string) => {
+    const s = status?.toLowerCase() || '';
+    if (s === 'processed' || s === 'verarbeitet') {
+      return (
+        <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">
+          <CheckCircle className="w-3.5 h-3.5" />
+          Verarbeitet
+        </div>
+      );
+    }
+    if (s === 'processing' || s === 'wird verarbeitet') {
+      return (
+        <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          Wird verarbeitet
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-semibold">
+        <Clock className="w-3.5 h-3.5" />
+        {status || 'Unbekannt'}
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8">
       <div>
         <h3 className="text-xl font-bold text-slate-800 mb-2">Dokumente & Skripte</h3>
-        <p className="text-slate-500">Lade hier deine Lernmaterialien hoch. Die KI verarbeitet diese automatisch als Grundlage für deine Klausuren.</p>
+        <p className="text-slate-500">
+          Lade hier deine Lernmaterialien hoch. Die KI verarbeitet diese automatisch als Grundlage für deine Klausuren.
+        </p>
       </div>
 
-      <div className="border-2 border-dashed border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-400 transition-all duration-300 rounded-3xl p-12 flex flex-col items-center justify-center text-center cursor-pointer group">
-        <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
-          <UploadCloud className="w-8 h-8 text-indigo-500" />
+      {/* Upload Zone */}
+      <div
+        onClick={() => !isUploading && fileInputRef.current?.click()}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        className={`border-2 border-dashed rounded-3xl p-12 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 group ${
+          isDragging
+            ? 'border-indigo-500 bg-indigo-100/50 scale-[1.02]'
+            : isUploading
+            ? 'border-amber-300 bg-amber-50/50 cursor-wait'
+            : 'border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-400'
+        }`}
+      >
+        <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
+
+        {isUploading ? (
+          <>
+            <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4 animate-pulse">
+              <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+            </div>
+            <h4 className="text-lg font-semibold text-slate-700 mb-1">{uploadStatus}</h4>
+          </>
+        ) : (
+          <>
+            <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
+              <UploadCloud className="w-8 h-8 text-indigo-500" />
+            </div>
+            <h4 className="text-lg font-semibold text-slate-700 mb-1">
+              PDFs (Skripte, Altklausuren) hier ablegen
+            </h4>
+            <p className="text-slate-500 text-sm">oder klicken zum Auswählen</p>
+          </>
+        )}
+      </div>
+
+      {uploadStatus && !isUploading && (
+        <div className={`text-sm font-medium px-4 py-2 rounded-xl text-center ${
+          uploadStatus.startsWith('Fehler') ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+        }`}>
+          {uploadStatus}
         </div>
-        <h4 className="text-lg font-semibold text-slate-700 mb-1">PDFs (Skripte, Altklausuren) hier ablegen</h4>
-        <p className="text-slate-500 text-sm">oder klicken zum Auswählen</p>
-      </div>
+      )}
 
+      {/* Uploaded Files */}
       <div>
         <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
           <FileText className="w-5 h-5 text-indigo-500" />
           Hochgeladene Dateien
+          {knowledge.length > 0 && (
+            <span className="text-xs text-slate-400 font-normal">({knowledge.length})</span>
+          )}
         </h4>
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-          <ul className="divide-y divide-slate-100">
-            {mockFiles.map(file => (
-              <li key={file.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-rose-50 rounded-lg">
-                    <FileText className="w-5 h-5 text-rose-500" />
+
+        {knowledge.length === 0 ? (
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-400 shadow-sm">
+            <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+            <p>Noch keine Dateien hochgeladen.</p>
+          </div>
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+            <ul className="divide-y divide-slate-100">
+              {knowledge.map((entry) => (
+                <li key={entry.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-rose-50 rounded-lg">
+                      <FileText className="w-5 h-5 text-rose-500" />
+                    </div>
+                    <span className="font-medium text-slate-700">{entry.file_name}</span>
                   </div>
-                  <span className="font-medium text-slate-700">{file.name}</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  {file.status}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+                  {getStatusBadge(entry.status)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function GeneratorTab() {
-  const [topic, setTopic] = useState("");
+// ==========================================
+// Tab 2: Klausur-Generator
+// ==========================================
+function GeneratorTab({
+  courseId,
+  courseName,
+  exams,
+  onRefresh,
+}: {
+  courseId: number;
+  courseName: string;
+  exams: GeneratedExam[];
+  onRefresh: () => void;
+}) {
+  const [topic, setTopic] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isDone, setIsDone] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!topic.trim()) return;
     setIsGenerating(true);
-    setIsDone(false);
-    
-    // Mock API call
-    setTimeout(() => {
+    setGenError(null);
+
+    try {
+      await generateExam(courseId, topic.trim(), courseName);
+      setTopic('');
+      onRefresh();
+    } catch (err) {
+      setGenError(err instanceof Error ? err.message : 'Generierung fehlgeschlagen');
+    } finally {
       setIsGenerating(false);
-      setIsDone(true);
-    }, 2000);
+    }
+  };
+
+  const getExamStatusBadge = (status: string) => {
+    const s = status?.toLowerCase() || '';
+    if (s === 'completed' || s === 'fertig') {
+      return <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">Fertig</span>;
+    }
+    if (s === 'processing' || s === 'in bearbeitung') {
+      return <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" />Wird generiert</span>;
+    }
+    return <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-semibold">{status || 'Ausstehend'}</span>;
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 text-left">
+    <div className="space-y-8 text-left">
       <div>
         <h3 className="text-xl font-bold text-slate-800 mb-2">Klausur-Generator</h3>
-        <p className="text-slate-500">Erstelle eine individuelle Übungsklausur basierend auf deiner Wissensdatenbank.</p>
+        <p className="text-slate-500">
+          Erstelle eine individuelle Übungsklausur basierend auf deiner Wissensdatenbank.
+        </p>
       </div>
 
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
@@ -339,33 +619,58 @@ function GeneratorTab() {
             </>
           )}
         </button>
+
+        {genError && (
+          <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            {genError}
+          </div>
+        )}
       </div>
 
-      {(isGenerating || isDone) && (
-        <div className="animate-in fade-in zoom-in-95 duration-500">
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent my-8" />
-          
-          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
-            {isGenerating ? (
-              <div className="p-4 bg-white rounded-full shadow-sm mb-4 animate-pulse">
-                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+      {/* Generated Exams List */}
+      {exams.length > 0 && (
+        <div>
+          <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-indigo-500" />
+            Generierte Klausuren
+            <span className="text-xs text-slate-400 font-normal">({exams.length})</span>
+          </h4>
+
+          <div className="space-y-3">
+            {exams.map((exam) => (
+              <div
+                key={exam.id}
+                className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-slate-700 truncate">{exam.prompt}</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {new Date(exam.created_at).toLocaleDateString('de-DE', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  {getExamStatusBadge(exam.status)}
+                  {exam.pdf_url && (
+                    <a
+                      href={exam.pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 hover:text-indigo-600 hover:border-indigo-300 hover:shadow-md transition-all flex items-center gap-2 text-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      PDF
+                    </a>
+                  )}
+                </div>
               </div>
-            ) : (
-              <div className="p-4 bg-white rounded-full shadow-sm mb-4 scale-in duration-300">
-                <CheckCircle className="w-8 h-8 text-emerald-500" />
-              </div>
-            )}
-            
-            <h4 className="text-lg font-bold text-slate-800 mb-2">
-              {isGenerating ? "KI analysiert Skripte..." : "Deine Klausur ist fertig!"}
-            </h4>
-            
-            {isDone && (
-              <button className="mt-4 px-6 py-3 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 hover:text-indigo-600 hover:border-indigo-300 hover:shadow-md transition-all flex items-center gap-2">
-                <Download className="w-4 h-4" />
-                Download Klausur (PDF)
-              </button>
-            )}
+            ))}
           </div>
         </div>
       )}
@@ -373,50 +678,122 @@ function GeneratorTab() {
   );
 }
 
-function FeedbackTab() {
+// ==========================================
+// Tab 3: Korrektur & Feedback
+// ==========================================
+function FeedbackTab({
+  courseId,
+  exams,
+}: {
+  courseId: number;
+  exams: GeneratedExam[];
+}) {
+  const [selectedExamId, setSelectedExamId] = useState<number | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [showResult, setShowResult] = useState(false);
+  const [feedbackResult, setFeedbackResult] = useState<FeedbackResult | null>(null);
+  const [fbError, setFbError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUploadClick = () => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) setFile(f);
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedExamId || !file) return;
     setIsUploading(true);
-    setShowResult(false);
-    
-    // Mock API call
-    setTimeout(() => {
+    setFbError(null);
+    setFeedbackResult(null);
+
+    try {
+      const result = await submitFeedback(courseId, selectedExamId, file);
+      setFeedbackResult(result.feedback);
+    } catch (err) {
+      setFbError(err instanceof Error ? err.message : 'Feedback konnte nicht geladen werden');
+    } finally {
       setIsUploading(false);
-      setShowResult(true);
-    }, 2500);
+    }
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8">
       <div>
         <h3 className="text-xl font-bold text-slate-800 mb-2">Korrektur & Feedback</h3>
-        <p className="text-slate-500">Lade deine bearbeitete Klausur hoch, um eine automatische Bewertung zu erhalten.</p>
+        <p className="text-slate-500">
+          Lade deine bearbeitete Klausur hoch, um eine automatische KI-Bewertung zu erhalten.
+        </p>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="border border-slate-200 rounded-xl p-4 mb-6 flex items-center justify-between bg-slate-50">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+        {/* Exam Selector */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">
+            Welche Klausur hast du bearbeitet?
+          </label>
+          {exams.length === 0 ? (
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-500 text-center">
+              <AlertCircle className="w-5 h-5 mx-auto mb-2 text-slate-400" />
+              Keine Klausuren vorhanden. Generiere zuerst eine im Klausur-Generator Tab.
+            </div>
+          ) : (
+            <select
+              value={selectedExamId || ''}
+              onChange={(e) => setSelectedExamId(e.target.value ? Number(e.target.value) : null)}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white text-slate-700 shadow-sm"
+            >
+              <option value="">Klausur auswählen...</option>
+              {exams.map((exam) => (
+                <option key={exam.id} value={exam.id}>
+                  {exam.prompt.substring(0, 60)}{exam.prompt.length > 60 ? '...' : ''} — {new Date(exam.created_at).toLocaleDateString('de-DE')}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {/* File Upload */}
+        <div className="border border-slate-200 rounded-xl p-4 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white rounded-lg border border-slate-100 shadow-sm">
               <UploadCloud className="w-5 h-5 text-slate-500" />
             </div>
             <div>
-              <p className="font-medium text-slate-700">Bild oder PDF auswählen</p>
-              <p className="text-xs text-slate-500">Scans deiner Handschrift werden unterstützt</p>
+              {file ? (
+                <>
+                  <p className="font-medium text-slate-700">{file.name}</p>
+                  <p className="text-xs text-slate-500">{(file.size / 1024).toFixed(0)} KB</p>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium text-slate-700">Bild oder PDF auswählen</p>
+                  <p className="text-xs text-slate-500">Scans deiner Handschrift werden unterstützt</p>
+                </>
+              )}
             </div>
           </div>
-          <button className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+          >
             Durchsuchen
           </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            className="hidden"
+            onChange={handleFileChange}
+          />
         </div>
 
+        {/* Submit Button */}
         <button
-          onClick={handleUploadClick}
-          disabled={isUploading}
+          onClick={handleSubmit}
+          disabled={isUploading || !selectedExamId || !file}
           className={`w-full py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md ${
-            isUploading
-              ? 'bg-slate-100 text-slate-400 shadow-none'
+            isUploading || !selectedExamId || !file
+              ? 'bg-slate-100 text-slate-400 shadow-none cursor-not-allowed'
               : 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-lg hover:-translate-y-0.5'
           }`}
         >
@@ -432,45 +809,105 @@ function FeedbackTab() {
             </>
           )}
         </button>
+
+        {fbError && (
+          <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            {fbError}
+          </div>
+        )}
       </div>
 
-      {showResult && (
-        <div className="bg-gradient-to-br from-white to-indigo-50/30 p-8 rounded-3xl border border-slate-200 shadow-xl animate-in fade-in slide-in-from-bottom-8 duration-700">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-200">
-              A-
-            </div>
-            <div>
-              <h4 className="text-2xl font-bold text-slate-800 tracking-tight">Klausur-Ergebnis</h4>
-              <p className="text-indigo-600 font-medium">14 von 20 Punkten erreicht (70%)</p>
-            </div>
-          </div>
+      {/* FEEDBACK RESULT CARD */}
+      {feedbackResult && (
+        <FeedbackCard feedback={feedbackResult} />
+      )}
+    </div>
+  );
+}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-sm">
-              <h5 className="font-semibold text-emerald-700 mb-3 flex items-center gap-2">
-                <CheckCircle className="w-5 h-5" />
-                Stärken
-              </h5>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" /> Sehr guter Lösungsansatz bei Aufgabe 1</li>
-                <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" /> Korrekte Definition von Vektorräumen</li>
-              </ul>
-            </div>
-            
-            <div className="bg-white p-6 rounded-2xl border border-amber-100 shadow-sm">
-              <h5 className="font-semibold text-amber-700 mb-3 flex items-center gap-2">
-                <BookOpen className="w-5 h-5" />
-                Schwächen laut Skript
-              </h5>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" /> Vorzeichenfehler in der Matrizenmultiplikation (siehe Skript S. 42)</li>
-                <li className="flex gap-2"><div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" /> Begründung in Aufgabe 3 war unvollständig</li>
-              </ul>
-            </div>
-          </div>
+// ==========================================
+// Feedback Card Component
+// ==========================================
+function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
+  const score = feedback.score ?? 0;
+  const maxScore = feedback.max_score ?? 20;
+  const grade = feedback.grade || 'N/A';
+  const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+
+  return (
+    <div className="bg-gradient-to-br from-white to-indigo-50/30 p-8 rounded-3xl border border-slate-200 shadow-xl">
+      <div className="flex items-center gap-4 mb-8">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-200">
+          {grade}
+        </div>
+        <div>
+          <h4 className="text-2xl font-bold text-slate-800 tracking-tight">Klausur-Ergebnis</h4>
+          <p className="text-indigo-600 font-medium">
+            {score} von {maxScore} Punkten erreicht ({percentage}%)
+          </p>
+        </div>
+      </div>
+
+      {/* General Feedback */}
+      {feedback.feedback && (
+        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm mb-6">
+          <p className="text-slate-700 leading-relaxed">{feedback.feedback}</p>
         </div>
       )}
+
+      {/* Per-task feedback */}
+      {feedback.tasks && feedback.tasks.length > 0 && (
+        <div className="space-y-4 mb-6">
+          <h5 className="font-semibold text-slate-800">Feedback pro Aufgabe</h5>
+          {feedback.tasks.map((task, i) => (
+            <div key={i} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-semibold text-slate-700">{task.task}</span>
+                <span className="text-sm font-semibold text-indigo-600">{task.score}</span>
+              </div>
+              <p className="text-sm text-slate-600">{task.feedback}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Strengths & Weaknesses */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {feedback.strengths && feedback.strengths.length > 0 && (
+          <div className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-sm">
+            <h5 className="font-semibold text-emerald-700 mb-3 flex items-center gap-2">
+              <CheckCircle className="w-5 h-5" />
+              Stärken
+            </h5>
+            <ul className="space-y-2 text-sm text-slate-600">
+              {feedback.strengths.map((s, i) => (
+                <li key={i} className="flex gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                  {s}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {feedback.weaknesses && feedback.weaknesses.length > 0 && (
+          <div className="bg-white p-6 rounded-2xl border border-amber-100 shadow-sm">
+            <h5 className="font-semibold text-amber-700 mb-3 flex items-center gap-2">
+              <BookOpen className="w-5 h-5" />
+              Schwächen laut Skript
+            </h5>
+            <ul className="space-y-2 text-sm text-slate-600">
+              {feedback.weaknesses.map((w, i) => (
+                <li key={i} className="flex gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
+                  {w}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
