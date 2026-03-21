@@ -65,7 +65,7 @@ export default function App() {
       setCourses(data);
       setError(null);
     } catch (err) {
-      setError('Verbindung zum Server fehlgeschlagen. Läuft der Backend-Server?');
+      setError('Connection to server failed. Is the backend server running?');
       console.error(err);
     } finally {
       setIsLoadingCourses(false);
@@ -113,12 +113,12 @@ export default function App() {
       setActiveTab('database');
     } catch (err) {
       console.error('Error creating course:', err);
-      setError('Fach konnte nicht erstellt werden');
+      setError('Could not create course');
     }
   };
 
   const handleDeleteSubject = async (id: number, name: string) => {
-    if (!window.confirm(`Möchtest du das Fach "${name}" wirklich löschen?`)) return;
+    if (!window.confirm(`Do you really want to delete course "${name}" ?`)) return;
     setIsDeletingCourseId(id);
     try {
       await deleteCourse(id);
@@ -128,7 +128,7 @@ export default function App() {
       }
     } catch (err) {
       console.error('Error deleting course:', err);
-      setError('Fach konnte nicht gelöscht werden');
+      setError('Could not delete course');
     } finally {
       setIsDeletingCourseId(null);
     }
@@ -169,17 +169,17 @@ export default function App() {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-1">
           <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-3">
-            Meine Fächer
+            My Courses
           </div>
 
           {isLoadingCourses ? (
             <div className="flex items-center gap-2 px-3 py-4 text-slate-400">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-sm">Lade Fächer...</span>
+              <span className="text-sm">Loading courses...</span>
             </div>
           ) : courses.length === 0 ? (
             <p className="text-sm text-slate-400 px-3 py-4 text-center">
-              Noch keine Fächer angelegt.
+              No courses created yet.
             </p>
           ) : (
             courses.map((subject) => (
@@ -208,7 +208,7 @@ export default function App() {
                   className={`absolute right-2 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-opacity flex ${
                     activeSubjectId === subject.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto'
                   }`}
-                  title="Fach löschen"
+                  title="Delete course"
                 >
                   {isDeletingCourseId === subject.id ? (
                     <Loader2 className="w-4 h-4 animate-spin text-red-500" />
@@ -227,7 +227,7 @@ export default function App() {
               <input
                 type="text"
                 autoFocus
-                placeholder="Fachname..."
+                placeholder="Course name..."
                 value={newSubjectName}
                 onChange={(e) => setNewSubjectName(e.target.value)}
                 className="w-full px-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
@@ -237,14 +237,14 @@ export default function App() {
                   type="submit"
                   className="flex-1 bg-indigo-600 text-white text-sm font-medium py-2 rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"
                 >
-                  Speichern
+                  Save
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsAddingSubject(false)}
                   className="flex-1 bg-white text-slate-600 text-sm font-medium py-2 rounded-xl hover:bg-slate-50 border border-slate-200 transition-colors shadow-sm"
                 >
-                  Abbrechen
+                  Cancel
                 </button>
               </div>
             </form>
@@ -254,7 +254,7 @@ export default function App() {
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm font-medium group text-sm"
             >
               <Plus className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-              Neues Fach anlegen
+              Create new course
             </button>
           )}
         </div>
@@ -270,7 +270,7 @@ export default function App() {
             <AlertCircle className="w-5 h-5 shrink-0" />
             <span>{error}</span>
             <button onClick={() => { setError(null); loadCourses(); }} className="ml-auto text-red-500 hover:text-red-700 font-medium">
-              Erneut versuchen
+              Try again
             </button>
           </div>
         )}
@@ -282,10 +282,10 @@ export default function App() {
               <BookOpen className="w-10 h-10 text-indigo-500" />
             </div>
             <h2 className="text-3xl font-bold text-slate-800 mb-3 tracking-tight">
-              Willkommen bei University Acer!
+              Welcome to University Acer!
             </h2>
             <p className="text-slate-500 mb-10 max-w-md text-center text-lg leading-relaxed">
-              Wähle ein Fach aus der Seitenleiste oder lege ein neues an, um mit deiner Vorbereitung zu starten.
+              Select a course from the sidebar or create a new one to start your preparation.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-4xl">
@@ -299,7 +299,7 @@ export default function App() {
                     <Folder className="w-6 h-6 text-indigo-500 group-hover:text-white transition-colors duration-300" />
                   </div>
                   <h3 className="text-lg font-semibold text-slate-800 mb-1">{subject.name}</h3>
-                  <p className="text-sm text-slate-500">Klicke zum Öffnen</p>
+                  <p className="text-sm text-slate-500">Click to open</p>
                 </button>
               ))}
             </div>
@@ -311,7 +311,7 @@ export default function App() {
               <div className="flex items-center gap-3 text-sm font-medium text-slate-500 mb-2">
                 <Folder className="w-4 h-4" />
                 <button onClick={() => setActiveSubjectId(null)} className="hover:text-indigo-500 transition-colors">
-                  Meine Fächer
+                  My Courses
                 </button>
                 <ChevronRight className="w-4 h-4" />
                 <span className="text-indigo-600">{activeSubject.name}</span>
@@ -325,13 +325,13 @@ export default function App() {
             <div className="px-10 border-b border-slate-200 bg-white/30 backdrop-blur-md">
               <div className="flex gap-8">
                 <TabButton active={activeTab === 'database'} onClick={() => setActiveTab('database')} icon={<Library className="w-4 h-4" />}>
-                  Wissensdatenbank
+                  Knowledge Base
                 </TabButton>
                 <TabButton active={activeTab === 'generator'} onClick={() => setActiveTab('generator')} icon={<BrainCircuit className="w-4 h-4" />}>
-                  Klausur-Generator
+                  Exam Generator
                 </TabButton>
                 <TabButton active={activeTab === 'feedback'} onClick={() => setActiveTab('feedback')} icon={<FileBadge className="w-4 h-4" />}>
-                  Korrektur & Feedback
+                  Correction & Feedback
                 </TabButton>
                 <TabButton active={activeTab === 'flashcards'} onClick={() => setActiveTab('flashcards')} icon={<Layers className="w-4 h-4" />}>
                   Flashcards
@@ -407,7 +407,7 @@ function TabButton({
 }
 
 // ==========================================
-// Tab 1: Wissensdatenbank
+// Tab 1: Knowledge Base
 // ==========================================
 function DatabaseTab({
   courseId,
@@ -427,12 +427,12 @@ function DatabaseTab({
 
   const handleUpload = async (file: File) => {
     setIsUploading(true);
-    setUploadStatus('KI analysiert Dokument...');
+    setUploadStatus('AI is analyzing document...');
     setOptimisticDocs(prev => [...prev, { name: file.name, date: Date.now() }]);
 
     try {
       await uploadKnowledge(courseId, file);
-      setUploadStatus('Erfolgreich an KI gesendet!');
+      setUploadStatus('Successfully sent to AI!');
       // Refresh multiple times to catch n8n processing updates automatically
       onRefresh();
       setTimeout(onRefresh, 2000);
@@ -440,7 +440,7 @@ function DatabaseTab({
       setTimeout(onRefresh, 10000);
       setTimeout(() => setUploadStatus(null), 3000);
     } catch (err) {
-      setUploadStatus('Fehler: ' + (err instanceof Error ? err.message : 'Upload fehlgeschlagen'));
+      setUploadStatus('Error: ' + (err instanceof Error ? err.message : 'Upload failed'));
     } finally {
       setIsUploading(false);
     }
@@ -448,7 +448,7 @@ function DatabaseTab({
 
   const handleViewKnowledge = (url: string | undefined) => {
     if (!url) {
-      alert('Keine URL für dieses Dokument in der Datenbank (Cloudinary) gefunden.');
+      alert('No URL for this document found in the database (Cloudinary).');
       return;
     }
     
@@ -456,13 +456,13 @@ function DatabaseTab({
   };
 
   const handleDelete = async (id: number, fileName: string) => {
-    if (!window.confirm(`Möchtest du das Dokument "${fileName}" wirklich löschen?`)) return;
+    if (!window.confirm(`Do you want to delete the document "${fileName}"?`)) return;
     setIsDeletingId(id);
     try {
       await deleteKnowledge(courseId, id);
       onRefresh();
     } catch (err) {
-      alert('Fehler beim Löschen des Dokuments');
+      alert('Error deleting document');
     } finally {
       setIsDeletingId(null);
     }
@@ -491,14 +491,14 @@ function DatabaseTab({
   const renderProcessedBadge = () => (
     <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">
       <CheckCircle className="w-3.5 h-3.5" />
-      Verarbeitet
+      Processed
     </div>
   );
 
   const renderProcessingBadge = () => (
     <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold">
       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-      Wird verarbeitet
+      Processing
     </div>
   );
 
@@ -507,9 +507,9 @@ function DatabaseTab({
   return (
     <div className="space-y-8">
       <div>
-        <h3 className="text-xl font-bold text-slate-800 mb-2">Dokumente & Skripte</h3>
+        <h3 className="text-xl font-bold text-slate-800 mb-2">Documents & Scripts</h3>
         <p className="text-slate-500">
-          Lade hier deine Lernmaterialien hoch. Die KI verarbeitet diese automatisch als Grundlage für deine Klausuren.
+          Upload your learning materials here. The AI processes them automatically as a basis for your exams.
         </p>
       </div>
 
@@ -542,16 +542,16 @@ function DatabaseTab({
               <UploadCloud className="w-8 h-8 text-indigo-500" />
             </div>
             <h4 className="text-lg font-semibold text-slate-700 mb-1">
-              PDFs (Skripte, Altklausuren) hier ablegen
+              Drop PDFs (transcripts, past exams) here
             </h4>
-            <p className="text-slate-500 text-sm">oder klicken zum Auswählen</p>
+            <p className="text-slate-500 text-sm">or click to select</p>
           </>
         )}
       </div>
 
       {uploadStatus && !isUploading && (
         <div className={`text-sm font-medium px-4 py-2 rounded-xl text-center ${
-          uploadStatus.startsWith('Fehler') ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+          uploadStatus.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
         }`}>
           {uploadStatus}
         </div>
@@ -561,7 +561,7 @@ function DatabaseTab({
       <div>
         <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
           <FileText className="w-5 h-5 text-indigo-500" />
-          Hochgeladene Dateien
+          Uploaded Files
           {knowledge.length > 0 && (
             <span className="text-xs text-slate-400 font-normal">({knowledge.length})</span>
           )}
@@ -570,7 +570,7 @@ function DatabaseTab({
         {knowledge.length === 0 && pendingDocs.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-400 shadow-sm">
             <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-            <p>Noch keine Dateien hochgeladen.</p>
+            <p>No files uploaded yet.</p>
           </div>
         ) : (
           <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
@@ -597,9 +597,9 @@ function DatabaseTab({
                     <button
                       onClick={() => handleViewKnowledge(entry.url)}
                       className="font-medium text-indigo-600 hover:text-indigo-800 hover:underline text-left transition-colors"
-                      title="Klicken, um das PDF zu öffnen"
+                      title="Click to open PDF"
                     >
-                      {entry.file_name || 'Unbekanntes Dokument'}
+                      {entry.file_name || 'Unknown Document'}
                     </button>
                   </div>
                   <div className="flex items-center gap-3">
@@ -608,7 +608,7 @@ function DatabaseTab({
                       onClick={() => handleDelete(entry.id, entry.file_name)}
                       disabled={isDeletingId === entry.id}
                       className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Dokument löschen"
+                      title="Delete document"
                     >
                       {isDeletingId === entry.id ? (
                         <Loader2 className="w-4 h-4 animate-spin text-red-500" />
@@ -628,7 +628,7 @@ function DatabaseTab({
 }
 
 // ==========================================
-// Tab 2: Klausur-Generator
+// Tab 2: Exam Generator
 // ==========================================
 function GeneratorTab({
   courseId,
@@ -639,23 +639,24 @@ function GeneratorTab({
   exams: GeneratedExam[];
   onRefresh: () => void;
 }) {
-  const [topic, setTopic] = useState('');
+  const [focusTopic, setFocusTopic] = useState('');
+  const [difficulty, setDifficulty] = useState('medium');
+  const [additionalNotes, setAdditionalNotes] = useState('');
   const [fileName, setFileName] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
-    if (!topic.trim()) return;
-    setIsGenerating(true);
-    setGenError(null);
+    const combinedPrompt = `Topic Focus: ${focusTopic || 'General'}\nDifficulty: ${difficulty}\nAdditional Notes: ${additionalNotes}`;
 
     try {
-      await generateExam(courseId, topic.trim(), fileName.trim());
-      setTopic('');
+      await generateExam(courseId, combinedPrompt, fileName.trim());
+      setFocusTopic('');
+      setAdditionalNotes('');
       setFileName('');
       onRefresh();
     } catch (err) {
-      setGenError(err instanceof Error ? err.message : 'Generierung fehlgeschlagen');
+      setGenError(err instanceof Error ? err.message : 'Generation failed');
     } finally {
       setIsGenerating(false);
     }
@@ -667,13 +668,13 @@ function GeneratorTab({
 
   const getExamStatusBadge = (exam: GeneratedExam) => {
     if (exam.url) {
-      return <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">Fertig</span>;
+      return <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">Ready</span>;
     }
     const s = exam.status?.toLowerCase() || '';
-    if (s === 'processing' || s === 'in bearbeitung' || !exam.url) {
-      return <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" />Wird generiert</span>;
+    if (s === 'processing' || s === 'in progress' || !exam.url) {
+      return <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" />Generating</span>;
     }
-    return <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-semibold">{exam.status || 'Ausstehend'}</span>;
+    return <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-semibold">{exam.status || 'Pending'}</span>;
   };
 
   // Poll for updates if there are pending exams
@@ -691,40 +692,81 @@ function GeneratorTab({
   return (
     <div className="space-y-8 text-left">
       <div>
-        <h3 className="text-xl font-bold text-slate-800 mb-2">Klausur-Generator</h3>
+        <h3 className="text-xl font-bold text-slate-800 mb-2">Exam Generator</h3>
         <p className="text-slate-500">
-          Erstelle eine individuelle Übungsklausur basierend auf deiner Wissensdatenbank.
+          Create a custom practice exam based on your knowledge base.
         </p>
       </div>
 
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Worüber möchtest du eine Klausur schreiben?
-          </label>
-          <textarea
-            className="w-full h-32 p-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none shadow-sm text-slate-700 mb-4"
-            placeholder="z.B. 3 Aufgaben zu Matrizen, 2 Aufgaben zu Vektorräumen..."
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-          />
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Dateiname (Optional)
-          </label>
-          <input
-            type="text"
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm text-slate-700"
-            placeholder="z.B. Lineare_Algebra_Übung_1"
-            value={fileName}
-            onChange={(e) => setFileName(e.target.value)}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Topic Focus (optional)
+              </label>
+              <input
+                type="text"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm text-slate-700"
+                placeholder="e.g. Matrix Calculus"
+                value={focusTopic}
+                onChange={(e) => setFocusTopic(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Difficulty Level
+              </label>
+              <div className="flex gap-2">
+                {['easy', 'medium', 'hard'].map((level) => (
+                  <button
+                    key={level}
+                    onClick={() => setDifficulty(level)}
+                    className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium border transition-all ${
+                      difficulty === level
+                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                    }`}
+                  >
+                    {level.charAt(0).toUpperCase() + level.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                File Name (optional)
+              </label>
+              <input
+                type="text"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm text-slate-700"
+                placeholder="e.g. Exam_Practice_1"
+                value={fileName}
+                onChange={(e) => setFileName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Specifics / Other
+              </label>
+              <textarea
+                className="w-full h-[110px] p-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none shadow-sm text-slate-700"
+                placeholder="e.g. Multiple Choice only, 90 min time limit..."
+                value={additionalNotes}
+                onChange={(e) => setAdditionalNotes(e.target.value)}
+              />
+            </div>
+          </div>
         </div>
 
         <button
           onClick={handleGenerate}
-          disabled={!topic.trim() || isGenerating}
+          disabled={isGenerating}
           className={`w-full py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md ${
-            !topic.trim() || isGenerating
+            isGenerating
               ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
               : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:-translate-y-0.5'
           }`}
@@ -732,12 +774,12 @@ function GeneratorTab({
           {isGenerating ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              Generiere Klausur...
+              Generating exam...
             </>
           ) : (
             <>
               <BrainCircuit className="w-5 h-5" />
-              Klausur als PDF generieren
+              Generate Exam as PDF
             </>
           )}
         </button>
@@ -755,7 +797,7 @@ function GeneratorTab({
         <div>
           <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-indigo-500" />
-            Generierte Klausuren
+            Generated Exams
             <span className="text-xs text-slate-400 font-normal">({exams.length})</span>
           </h4>
 
@@ -766,7 +808,7 @@ function GeneratorTab({
                 className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-700 truncate">{exam.file_name || `Klausur #${exam.id}`}</p>
+                  <p className="font-medium text-slate-700 truncate">{exam.file_name || `Exam #${exam.id}`}</p>
                   <p className="text-xs text-slate-400 mt-1">
                     {exam.created_at ? new Date(exam.created_at).toLocaleDateString('de-DE', {
                       day: '2-digit',
@@ -774,7 +816,7 @@ function GeneratorTab({
                       year: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit',
-                    }) : 'Unbekanntes Datum'}
+                    }) : 'Unknown Date'}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
@@ -783,13 +825,13 @@ function GeneratorTab({
                     <button
                       onClick={() => handleDownloadPdf(exam.url!)}
                       className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 hover:text-indigo-600 hover:border-indigo-300 hover:shadow-md transition-all flex items-center gap-2 text-sm"
-                      title="PDF herunterladen"
+                      title="Download PDF"
                     >
                       <Download className="w-4 h-4" />
-                      PDF herunterladen
+                      Download PDF
                     </button>
                   ) : (
-                    <span className="text-xs text-slate-400 italic">Wird erstellt...</span>
+                    <span className="text-xs text-slate-400 italic">Generating...</span>
                   )}
                 </div>
               </div>
@@ -802,7 +844,7 @@ function GeneratorTab({
 }
 
 // ==========================================
-// Tab 3: Korrektur & Feedback
+// Tab 3: Correction & Feedback
 // ==========================================
 function FeedbackTab({
   courseId,
@@ -836,7 +878,7 @@ function FeedbackTab({
       const result = await submitFeedback(courseId, selectedExamId, file);
       setFeedbackResult(result.feedback);
     } catch (err) {
-      setFbError(err instanceof Error ? err.message : 'Feedback konnte nicht geladen werden');
+      setFbError(err instanceof Error ? err.message : 'Could not load feedback');
     } finally {
       setIsUploading(false);
     }
@@ -846,15 +888,15 @@ function FeedbackTab({
     <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       {!selectedExamId ? (
         <div className="p-6 overflow-y-auto">
-          <h3 className="text-xl font-bold text-slate-800 mb-2">Korrektur & Feedback</h3>
+          <h3 className="text-xl font-bold text-slate-800 mb-2">Correction & Feedback</h3>
           <p className="text-slate-500 mb-6">
-            Wähle eine generierte Klausur aus, um deine Lösung hochzuladen und eine Bewertung zu erhalten.
+            Select a generated exam to upload your solution and receive feedback.
           </p>
 
           {exams.length === 0 ? (
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center text-slate-500">
               <AlertCircle className="w-6 h-6 mx-auto mb-3 text-slate-400" />
-              Keine Klausuren vorhanden. Generiere zuerst eine im Klausur-Generator Tab.
+              No exams available. Generate one in the Exam Generator tab first.
             </div>
           ) : (
             <div className="space-y-3">
@@ -873,9 +915,9 @@ function FeedbackTab({
                       <FileBadge className="w-6 h-6 text-indigo-500" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-slate-800">{exam.file_name || `Klausur #${exam.id}`}</h4>
+                      <h4 className="font-semibold text-slate-800">{exam.file_name || `Exam #${exam.id}`}</h4>
                       <p className="text-sm text-slate-500">
-                        Generiert am {exam.created_at ? new Date(exam.created_at).toLocaleDateString('de-DE') : 'Unbekannt'}
+                        Generated on {exam.created_at ? new Date(exam.created_at).toLocaleDateString('de-DE') : 'Unknown'}
                       </p>
                     </div>
                   </div>
@@ -894,129 +936,93 @@ function FeedbackTab({
               className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"
             >
               <ChevronRight className="w-4 h-4 rotate-180" />
-              Zurück zur Übersicht
+              Back to Overview
             </button>
             <div className="font-semibold text-slate-800">
-              {selectedExam?.file_name || `Klausur #${selectedExamId}`}
+              {selectedExam?.file_name || `Exam #${selectedExamId}`}
             </div>
           </div>
 
-          {/* Chat History */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50">
-            {/* AI Welcome Message */}
-            <div className="flex gap-4">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-sm">
-                <BrainCircuit className="w-5 h-5 text-white" />
-              </div>
-              <div className="bg-white p-4 rounded-2xl rounded-tl-none border border-slate-200 shadow-sm max-w-[80%]">
-                <p className="text-slate-700">
-                  Hallo! Ich bin bereit, deine Lösung für <strong>{selectedExam?.file_name || `Klausur #${selectedExamId}`}</strong> zu korrigieren. 
-                  Bitte lade ein PDF oder ein Foto deiner Bearbeitung hoch.
-                </p>
-                {selectedExam?.url && (
-                  <a
-                    href={selectedExam.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                    Klausur-PDF ansehen
-                  </a>
-                )}
-              </div>
-            </div>
+          {/* Simple Interface for Upload & Result */}
+          <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
+            {!feedbackResult ? (
+              <div className="max-w-2xl mx-auto space-y-8">
+                <div className="text-center space-y-2">
+                  <h4 className="text-2xl font-bold text-slate-800">Upload Solution</h4>
+                  <p className="text-slate-500">Upload your completed exam (PDF or photo) to receive direct feedback.</p>
+                </div>
 
-            {/* AI Error */}
-            {fbError && (
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-sm">
-                  <BrainCircuit className="w-5 h-5 text-white" />
-                </div>
-                <div className="bg-red-50 p-4 rounded-2xl rounded-tl-none border border-red-200 text-red-700 flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5" />
-                  {fbError}
-                </div>
-              </div>
-            )}
-
-            {/* Uploaded File Message */}
-            {(file || isUploading || feedbackResult) && (
-              <div className="flex gap-4 flex-row-reverse">
-                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
-                  <span className="text-slate-600 font-bold text-sm">DU</span>
-                </div>
-                <div className="bg-indigo-600 text-white p-4 rounded-2xl rounded-tr-none shadow-sm flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-indigo-200" />
-                  <div>
-                    <p className="font-medium">{file ? file.name : (feedbackResult ? 'Datei hochgeladen' : '...')}</p>
-                    {file && <p className="text-xs text-indigo-200">{(file.size / 1024).toFixed(0)} KB</p>}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* AI Processing / Results */}
-            {isUploading && (
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-sm">
-                  <BrainCircuit className="w-5 h-5 text-white" />
-                </div>
-                <div className="bg-white p-4 rounded-2xl rounded-tl-none border border-slate-200 shadow-sm flex items-center gap-3 text-slate-700">
-                  <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
-                  Analysiere deine Lösung... Bitte habe einen Moment Geduld.
-                </div>
-              </div>
-            )}
-
-            {feedbackResult && !isUploading && (
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-sm">
-                  <BrainCircuit className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1 max-w-[90%]">
-                  <FeedbackCard feedback={feedbackResult} />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Input Area */}
-          {!feedbackResult && (
-            <div className="p-4 bg-white border-t border-slate-100">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="p-3 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl transition-colors shrink-0"
-                  title="Datei auswählen"
-                >
-                  <UploadCloud className="w-6 h-6" />
-                </button>
-                <div className="flex-1 px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-500 text-sm">
-                  {file ? file.name : 'Keine Datei ausgewählt...'}
-                </div>
-                <button
-                  onClick={handleSubmit}
-                  disabled={!file || isUploading}
-                  className={`px-6 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-md shrink-0 ${
-                    !file || isUploading
-                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg'
+                {/* Simplified Upload Zone */}
+                <div
+                  onClick={() => !isUploading && fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-3xl p-12 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${
+                    isUploading
+                      ? 'border-amber-300 bg-amber-50/50 cursor-wait'
+                      : 'border-indigo-200 bg-white hover:bg-indigo-50 hover:border-indigo-400'
                   }`}
                 >
-                  <Send className="w-5 h-5" />
-                  Senden
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+
+                  {isUploading ? (
+                    <div className="space-y-4">
+                      <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mx-auto">
+                        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                      </div>
+                      <p className="text-lg font-semibold text-slate-700">Analyzing solution...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mx-auto text-indigo-500">
+                        <UploadCloud className="w-8 h-8" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-lg font-semibold text-slate-700">
+                          {file ? file.name : 'Drop file here or click to select'}
+                        </p>
+                        <p className="text-sm text-slate-500">PDF, JPG or PNG</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {fbError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5" />
+                    {fbError}
+                  </div>
+                )}
+
+                {!isUploading && file && (
+                  <button
+                    onClick={handleSubmit}
+                    className="w-full py-4 bg-indigo-600 text-white rounded-xl font-semibold shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Send className="w-5 h-5" />
+                    Request Correction
+                  </button>
+                )}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="max-w-4xl mx-auto space-y-6">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-2xl font-bold text-slate-800">Your Statistics</h4>
+                  <button 
+                    onClick={() => { setFeedbackResult(null); setFile(null); }}
+                    className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
+                  >
+                    Upload new file
+                  </button>
+                </div>
+                <FeedbackCard feedback={feedbackResult} />
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -1030,7 +1036,7 @@ function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
   // Try to find score/grade in potentially different fields
   const score = feedback.score ?? feedback.total_score ?? 0;
   const maxScore = feedback.max_score ?? 20;
-  const grade = feedback.grade || (typeof score === 'number' ? (score / maxScore > 0.5 ? 'Bestanden' : '5.0') : 'N/A');
+  const grade = feedback.grade || (typeof score === 'number' ? (score / maxScore > 0.5 ? 'Passed' : 'Failed') : 'N/A');
   const percentage = maxScore > 0 && typeof score === 'number' ? Math.round((score / maxScore) * 100) : null;
 
   // Check if we have structured data or just a raw string
@@ -1043,9 +1049,9 @@ function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
           {grade}
         </div>
         <div>
-          <h4 className="text-2xl font-bold text-slate-800 tracking-tight">Klausur-Ergebnis</h4>
+          <h4 className="text-2xl font-bold text-slate-800 tracking-tight">Exam Result</h4>
           <p className="text-indigo-600 font-medium">
-            {typeof score === 'number' ? `${score} von ${maxScore} Punkten` : String(score)} {percentage !== null && `(${percentage}%)`}
+            {typeof score === 'number' ? `${score} of ${maxScore} Pointsn` : String(score)} {percentage !== null && `(${percentage}%)`}
           </p>
         </div>
       </div>
@@ -1066,7 +1072,7 @@ function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
       {/* Per-task feedback */}
       {feedback.tasks && feedback.tasks.length > 0 && (
         <div className="space-y-4 mb-6">
-          <h5 className="font-semibold text-slate-800">Feedback pro Aufgabe</h5>
+          <h5 className="font-semibold text-slate-800">Feedback per Task</h5>
           {feedback.tasks.map((task, i) => (
             <div key={i} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:border-indigo-100 transition-colors">
               <div className="flex items-center justify-between mb-2">
@@ -1085,7 +1091,7 @@ function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
           <div className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-sm lg:hover:shadow-md transition-shadow">
             <h5 className="font-semibold text-emerald-700 mb-3 flex items-center gap-2">
               <CheckCircle className="w-5 h-5" />
-              Stärken
+              Strengths
             </h5>
             <ul className="space-y-2 text-sm text-slate-600">
               {feedback.strengths.map((s, i) => (
@@ -1102,7 +1108,7 @@ function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
           <div className="bg-white p-6 rounded-2xl border border-amber-100 shadow-sm lg:hover:shadow-md transition-shadow">
             <h5 className="font-semibold text-amber-700 mb-3 flex items-center gap-2">
               <BookOpen className="w-5 h-5" />
-              Schwächen laut Skript
+              Weaknesses based on script
             </h5>
             <ul className="space-y-2 text-sm text-slate-600">
               {feedback.weaknesses.map((w, i) => (
@@ -1162,7 +1168,7 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
       setCurrentIndex(0);
       setIsFlipped(false);
     } catch (err) {
-      setGenError(err instanceof Error ? err.message : 'Generierung fehlgeschlagen');
+      setGenError(err instanceof Error ? err.message : 'Generation failed');
     } finally {
       setIsGenerating(false);
     }
@@ -1197,9 +1203,9 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
   return (
     <div className="space-y-8 text-left max-w-2xl mx-auto w-full">
       <div>
-        <h3 className="text-xl font-bold text-slate-800 mb-2">Flashcards-Trainer</h3>
+        <h3 className="text-xl font-bold text-slate-800 mb-2">Flashcards Trainer</h3>
         <p className="text-slate-500">
-          Trainiere dein Wissen interaktiv mit KI-generierten Karteikarten basierend auf deinen Materialien.
+          Train your knowledge interactively with AI-generated flashcards.
         </p>
       </div>
 
@@ -1207,10 +1213,10 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
         <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm text-center">
           <Layers className="w-16 h-16 text-indigo-400 mx-auto mb-6 opacity-50" />
           <h4 className="text-2xl font-bold text-slate-800 mb-4 tracking-tight">
-            Bereit für dein Karteikarten-Training?
+            Ready for your flashcards training?
           </h4>
           <p className="text-slate-500 mb-8 max-w-sm mx-auto leading-relaxed">
-            Lass unsere KI aus deinen Altklausuren und Wissenstabs die wichtigsten Lernfragen für dich als Flashcards extrahieren.
+            Let our AI extract the most important questions from your old exams for you.
           </p>
           
           <button
@@ -1225,12 +1231,12 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
             {isGenerating ? (
               <>
                 <Loader2 className="w-6 h-6 animate-spin" />
-                KI analysiert Dokumente...
+                AI is analyzing documents...
               </>
             ) : (
               <>
                 <Sparkles className="w-6 h-6" />
-                Flashcards generieren
+                Generate Flashcards
               </>
             )}
           </button>
@@ -1249,16 +1255,16 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
             <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d cursor-pointer ${isFlipped ? 'rotate-y-180' : ''} shadow-xl rounded-3xl`}>
               {/* FRONT */}
               <div className="absolute w-full h-full backface-hidden bg-white border-2 border-indigo-100 rounded-3xl p-8 flex flex-col items-center justify-center text-center">
-                <span className="absolute top-6 left-8 text-indigo-400 font-semibold tracking-wider text-sm uppercase">Frage</span>
+                <span className="absolute top-6 left-8 text-indigo-400 font-semibold tracking-wider text-sm uppercase">Question</span>
                 <p className="text-2xl font-bold text-slate-800 leading-snug">
                   {cards[currentIndex].front}
                 </p>
-                <span className="absolute bottom-6 text-slate-400 text-sm animate-pulse">Zum Umdrehen klicken</span>
+                <span className="absolute bottom-6 text-slate-400 text-sm animate-pulse">Click to flip</span>
               </div>
               
               {/* BACK */}
               <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-3xl p-8 flex flex-col items-center justify-center text-center rotate-y-180">
-                 <span className="absolute top-6 left-8 text-indigo-500 font-semibold tracking-wider text-sm uppercase">Antwort</span>
+                 <span className="absolute top-6 left-8 text-indigo-500 font-semibold tracking-wider text-sm uppercase">Answer</span>
                 <p className="text-xl font-medium text-slate-700 leading-relaxed overflow-y-auto w-full px-4 max-h-[80%] custom-scrollbar">
                   {cards[currentIndex].back}
                 </p>
@@ -1274,11 +1280,11 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
                 className="px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 text-slate-700"
               >
                 <ChevronRight className="w-5 h-5 rotate-180" />
-                Vorherige
+                Previous
               </button>
               
               <div className="font-semibold text-slate-600 tracking-wide">
-                Karte {currentIndex + 1} von {cards.length}
+                Card {currentIndex + 1} of {cards.length}
               </div>
 
               <button
@@ -1286,7 +1292,7 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
                 disabled={currentIndex === cards.length - 1}
                 className="px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 text-slate-700"
               >
-                Nächste
+                Next
                 <ChevronRight className="w-5 h-5" />
               </button>
           </div>
@@ -1298,7 +1304,7 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
               className="w-full py-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-sm hover:shadow"
             >
               <Download className="w-6 h-6" />
-              In Anki / RemNote importieren (CSV Download)
+              Import into Anki / RemNote (CSV Download)
             </button>
           </div>
         </div>

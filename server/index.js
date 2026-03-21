@@ -19,7 +19,7 @@ app.use(express.json());
 async function callN8nWebhook(webhookUrl, payload, isMultipart = false, headers = {}) {
   if (!webhookUrl) {
     console.error('Webhook URL is missing in environment variables');
-    throw new Error('Webhook URL nicht konfiguriert');
+    throw new Error('Webhook URL not configured');
   }
 
   const tryCall = async (url) => {
@@ -47,7 +47,7 @@ async function callN8nWebhook(webhookUrl, payload, isMultipart = false, headers 
   }
 
   if (!response.ok) {
-    throw new Error(`n8n Webhook Fehler: ${response.status} ${response.statusText}`);
+    throw new Error(`n8n Webhook Error: ${response.status} ${response.statusText}`);
   }
 
   const data = await response.text();
@@ -69,7 +69,7 @@ app.get('/api/courses', async (_req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error('GET /api/courses error:', err);
-    res.status(500).json({ error: 'Fehler beim Laden der Fächer' });
+    res.status(500).json({ error: 'Error loading courses' });
   }
 });
 
@@ -77,7 +77,7 @@ app.get('/api/courses', async (_req, res) => {
 app.post('/api/courses', async (req, res) => {
   const { name } = req.body;
   if (!name || typeof name !== 'string' || !name.trim()) {
-    return res.status(400).json({ error: 'Name ist erforderlich' });
+    return res.status(400).json({ error: 'Name is required' });
   }
   try {
     const result = await pool.query(
@@ -87,7 +87,7 @@ app.post('/api/courses', async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('POST /api/courses error:', err);
-    res.status(500).json({ error: 'Fehler beim Erstellen des Fachs' });
+    res.status(500).json({ error: 'Error creating course' });
   }
 });
 
@@ -98,14 +98,14 @@ app.delete('/api/courses/:id', async (req, res) => {
     await pool.query('DELETE FROM public.knowledge WHERE course_id = $1', [id]);
     await pool.query('DELETE FROM public.generated_exams WHERE course_id = $1', [id]);
     const result = await pool.query('DELETE FROM public.courses WHERE id = $1 RETURNING *', [id]);
-    
+
     if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Fach nicht gefunden' });
+      return res.status(404).json({ error: 'Course not found' });
     }
-    res.json({ message: 'Fach erfolgreich gelöscht', deleted: result.rows[0] });
+    res.json({ message: 'Course successfully deleted', deleted: result.rows[0] });
   } catch (err) {
     console.error('DELETE /api/courses error:', err);
-    res.status(500).json({ error: 'Fehler beim Löschen des Fachs' });
+    res.status(500).json({ error: 'Error deleting course' });
   }
 });
 
@@ -124,7 +124,7 @@ app.get('/api/courses/:courseId/knowledge', async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error('GET /api/knowledge error:', err);
-    res.status(500).json({ error: 'Fehler beim Laden der Wissensdatenbank' });
+    res.status(500).json({ error: 'Error loading knowledge base' });
   }
 });
 
@@ -134,7 +134,7 @@ app.post('/api/courses/:courseId/knowledge/upload', upload.single('file'), async
   const file = req.file;
 
   if (!file) {
-    return res.status(400).json({ error: 'Keine Datei hochgeladen' });
+    return res.status(400).json({ error: 'No file uploaded' });
   }
 
   try {
@@ -158,14 +158,14 @@ app.post('/api/courses/:courseId/knowledge/upload', upload.single('file'), async
       [courseId]
     );
 
-    res.json({ 
-      message: 'Datei erfolgreich hochgeladen und verarbeitet',
+    res.json({
+      message: 'File successfully uploaded and processed',
       n8n_response: parsedN8n,
-      knowledge: result.rows 
+      knowledge: result.rows
     });
   } catch (err) {
     console.error('POST /api/knowledge/upload error:', err);
-    res.status(500).json({ error: 'Fehler beim Hochladen: ' + err.message });
+    res.status(500).json({ error: 'Upload failed: ' + err.message });
   }
 });
 
@@ -175,12 +175,12 @@ app.delete('/api/courses/:courseId/knowledge/:id', async (req, res) => {
   try {
     const result = await pool.query('DELETE FROM public.knowledge WHERE id = $1 AND course_id = $2 RETURNING *', [id, courseId]);
     if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Dokument nicht gefunden' });
+      return res.status(404).json({ error: 'Document not found' });
     }
-    res.json({ message: 'Dokument gelöscht', deleted: result.rows[0] });
+    res.json({ message: 'Document deleted', deleted: result.rows[0] });
   } catch (err) {
     console.error('DELETE /api/knowledge error:', err);
-    res.status(500).json({ error: 'Fehler beim Löschen des Dokuments' });
+    res.status(500).json({ error: 'Error deleting document' });
   }
 });
 
@@ -199,7 +199,7 @@ app.get('/api/courses/:courseId/exams', async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error('GET /api/exams error:', err);
-    res.status(500).json({ error: 'Fehler beim Laden der Klausuren' });
+    res.status(500).json({ error: 'Error loading exams' });
   }
 });
 
@@ -234,14 +234,14 @@ app.post('/api/courses/:courseId/exams/generate', async (req, res) => {
       [courseId]
     );
 
-    res.json({ 
-      message: 'Klausur wird generiert',
+    res.json({
+      message: 'Exam is being generated',
       n8n_response: parsedN8n,
-      exams: result.rows 
+      exams: result.rows
     });
   } catch (err) {
     console.error('POST /api/exams/generate error:', err);
-    res.status(500).json({ error: 'Fehler beim Generieren: ' + err.message, stack: err.stack });
+    res.status(500).json({ error: 'Generation failed: ' + err.message, stack: err.stack });
   }
 });
 
@@ -256,17 +256,22 @@ app.post('/api/courses/:courseId/feedback', upload.single('file'), async (req, r
   const file = req.file;
 
   if (!file) {
-    return res.status(400).json({ error: 'Keine Datei hochgeladen' });
+    return res.status(400).json({ error: 'No file uploaded' });
   }
   if (!exam_id) {
-    return res.status(400).json({ error: 'Keine Klausur ausgewählt' });
+    return res.status(400).json({ error: 'No exam selected' });
   }
 
   try {
+    // Fetch exam URL and existing evaluation_url (e.g. sample solution) from DB
+    const examResult = await pool.query('SELECT url, evaluation_url FROM public.generated_exams WHERE id = $1', [exam_id]);
+    const { url, evaluation_url } = examResult.rows[0] || {};
+
     const formData = new FormData();
-    formData.append('course_id', courseId);
-    formData.append('exam_id', exam_id);
-    formData.append('generated_exam_id', exam_id);
+    formData.append('url', url || '');
+    formData.append('evaluation_url', evaluation_url || '');
+    
+    // The ONLY binary field: the student's solution
     formData.append('file', file.buffer, {
       filename: file.originalname,
       contentType: file.mimetype,
@@ -277,13 +282,13 @@ app.post('/api/courses/:courseId/feedback', upload.single('file'), async (req, r
 
     console.log('n8n feedback response:', parsedN8n);
 
-    res.json({ 
-      message: 'Feedback erhalten',
-      feedback: parsedN8n 
+    res.json({
+      message: 'Feedback received',
+      feedback: parsedN8n
     });
   } catch (err) {
     console.error('POST /api/feedback error:', err);
-    res.status(500).json({ error: 'Fehler beim Erhalten des Feedbacks: ' + err.message });
+    res.status(500).json({ error: 'Error receiving feedback: ' + err.message });
   }
 });
 
@@ -297,7 +302,7 @@ app.post('/api/courses/:courseId/flashcards', async (req, res) => {
   try {
     const webhookUrl = process.env.N8N_WEBHOOK_FLASHCARDS;
     if (!webhookUrl) {
-      return res.status(500).json({ error: 'Flashcards Webhook nicht konfiguriert' });
+      return res.status(500).json({ error: 'Flashcards webhook not configured' });
     }
 
     const payload = {
@@ -310,7 +315,7 @@ app.post('/api/courses/:courseId/flashcards', async (req, res) => {
     res.json({ csvData: typeof csvData === 'string' ? csvData : JSON.stringify(parsedN8n) });
   } catch (err) {
     console.error('POST /api/flashcards error:', err);
-    res.status(500).json({ error: 'Fehler beim Generieren der Flashcards: ' + err.message });
+    res.status(500).json({ error: 'Error generating flashcards: ' + err.message });
   }
 });
 
