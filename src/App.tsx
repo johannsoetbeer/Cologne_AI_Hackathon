@@ -649,32 +649,32 @@ function GeneratorTab({
     }
   };
 
-  const compileLatex = (latex: string) => {
-    if (!latex) return;
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = 'https://latexonline.cc/compile';
-    form.target = '_blank';
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'text';
-    input.value = latex;
-    form.appendChild(input);
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
+  const handleDownloadPdf = (pdfUrl: string) => {
+    window.open(pdfUrl, '_blank');
   };
 
-  const getExamStatusBadge = (status: string) => {
-    const s = status?.toLowerCase() || '';
-    if (s === 'completed' || s === 'fertig') {
+  const getExamStatusBadge = (exam: GeneratedExam) => {
+    if (exam.url) {
       return <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">Fertig</span>;
     }
-    if (s === 'processing' || s === 'in bearbeitung') {
+    const s = exam.status?.toLowerCase() || '';
+    if (s === 'processing' || s === 'in bearbeitung' || !exam.url) {
       return <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" />Wird generiert</span>;
     }
-    return <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-semibold">{status || 'Ausstehend'}</span>;
+    return <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-semibold">{exam.status || 'Ausstehend'}</span>;
   };
+
+  // Poll for updates if there are pending exams
+  useEffect(() => {
+    const hasPending = exams.some(e => !e.url);
+    if (!hasPending) return;
+
+    const interval = setInterval(() => {
+      onRefresh();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [exams, onRefresh]);
 
   return (
     <div className="space-y-8 text-left">
@@ -744,7 +744,7 @@ function GeneratorTab({
                 className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-700 truncate">{exam.prompt}</p>
+                  <p className="font-medium text-slate-700 truncate">{exam.prompt || 'Individuelle Klausur'}</p>
                   <p className="text-xs text-slate-400 mt-1">
                     {exam.created_at ? new Date(exam.created_at).toLocaleDateString('de-DE', {
                       day: '2-digit',
@@ -756,16 +756,18 @@ function GeneratorTab({
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  {getExamStatusBadge(exam.status)}
-                  {exam.code && (
+                  {getExamStatusBadge(exam)}
+                  {exam.url ? (
                     <button
-                      onClick={() => compileLatex(exam.code)}
-                      className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 hover:text-indigo-600 hover:border-indigo-300 hover:shadow-md transition-all flex items-center gap-2 text-sm text-left truncate max-w-[200px]"
-                      title="Als PDF kompilieren"
+                      onClick={() => handleDownloadPdf(exam.url!)}
+                      className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 hover:text-indigo-600 hover:border-indigo-300 hover:shadow-md transition-all flex items-center gap-2 text-sm"
+                      title="PDF herunterladen"
                     >
                       <Download className="w-4 h-4" />
-                      Klausur_{exam.id}_{exam.created_at ? new Date(exam.created_at).toLocaleDateString('de-DE') : 'Unbekannt'}.pdf
+                      PDF herunterladen
                     </button>
+                  ) : (
+                    <span className="text-xs text-slate-400 italic">Wird erstellt...</span>
                   )}
                 </div>
               </div>
@@ -799,21 +801,17 @@ function FeedbackTab({
     if (f) setFile(f);
   };
 
+  const selectedExam = exams.find(e => e.id === selectedExamId) || null;
+
   const handleSubmit = async () => {
     if (!selectedExamId || !file) return;
-    
-    const selectedExam = exams.find(e => e.id === selectedExamId);
-    if (!selectedExam?.code) {
-      setFbError('Kein gültiger Klausur-Code (LaTeX) für dieses Fach gefunden.');
-      return;
-    }
 
     setIsUploading(true);
     setFbError(null);
     setFeedbackResult(null);
 
     try {
-      const result = await submitFeedback(courseId, selectedExamId, file, selectedExam.code);
+      const result = await submitFeedback(courseId, selectedExamId, file);
       setFeedbackResult(result.feedback);
     } catch (err) {
       setFbError(err instanceof Error ? err.message : 'Feedback konnte nicht geladen werden');
@@ -843,6 +841,7 @@ function FeedbackTab({
               Keine Klausuren vorhanden. Generiere zuerst eine im Klausur-Generator Tab.
             </div>
           ) : (
+            <>
             <select
               value={selectedExamId || ''}
               onChange={(e) => setSelectedExamId(e.target.value ? Number(e.target.value) : null)}
@@ -855,6 +854,20 @@ function FeedbackTab({
                 </option>
               ))}
             </select>
+
+            {/* Download link for selected exam */}
+            {selectedExam?.url && (
+              <a
+                href={selectedExam.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-medium hover:bg-indigo-100 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Klausur-PDF ansehen / herunterladen
+              </a>
+            )}
+            </>
           )}
         </div>
 
@@ -936,29 +949,39 @@ function FeedbackTab({
 // Feedback Card Component
 // ==========================================
 function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
-  const score = feedback.score ?? 0;
+  // Try to find score/grade in potentially different fields
+  const score = feedback.score ?? feedback.total_score ?? 0;
   const maxScore = feedback.max_score ?? 20;
-  const grade = feedback.grade || 'N/A';
-  const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+  const grade = feedback.grade || (typeof score === 'number' ? (score / maxScore > 0.5 ? 'Bestanden' : '5.0') : 'N/A');
+  const percentage = maxScore > 0 && typeof score === 'number' ? Math.round((score / maxScore) * 100) : null;
+
+  // Check if we have structured data or just a raw string
+  const hasDetails = (feedback.tasks && feedback.tasks.length > 0) || feedback.strengths || feedback.weaknesses;
 
   return (
-    <div className="bg-gradient-to-br from-white to-indigo-50/30 p-8 rounded-3xl border border-slate-200 shadow-xl">
+    <div className="bg-gradient-to-br from-white to-indigo-50/30 p-8 rounded-3xl border border-slate-200 shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-200">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-200 shrink-0">
           {grade}
         </div>
         <div>
           <h4 className="text-2xl font-bold text-slate-800 tracking-tight">Klausur-Ergebnis</h4>
           <p className="text-indigo-600 font-medium">
-            {score} von {maxScore} Punkten erreicht ({percentage}%)
+            {typeof score === 'number' ? `${score} von ${maxScore} Punkten` : score} {percentage !== null && `(${percentage}%)`}
           </p>
         </div>
       </div>
 
-      {/* General Feedback */}
+      {/* General Feedback or Raw Text */}
       {feedback.feedback && (
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm mb-6">
-          <p className="text-slate-700 leading-relaxed">{feedback.feedback}</p>
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-6">
+          <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{feedback.feedback}</p>
+        </div>
+      )}
+
+      {!feedback.feedback && !hasDetails && feedback.raw && (
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-6">
+          <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{String(feedback.raw)}</p>
         </div>
       )}
 
@@ -967,7 +990,7 @@ function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
         <div className="space-y-4 mb-6">
           <h5 className="font-semibold text-slate-800">Feedback pro Aufgabe</h5>
           {feedback.tasks.map((task, i) => (
-            <div key={i} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+            <div key={i} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:border-indigo-100 transition-colors">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold text-slate-700">{task.task}</span>
                 <span className="text-sm font-semibold text-indigo-600">{task.score}</span>
@@ -980,8 +1003,8 @@ function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
 
       {/* Strengths & Weaknesses */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {feedback.strengths && feedback.strengths.length > 0 && (
-          <div className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-sm">
+        {feedback.strengths && Array.isArray(feedback.strengths) && feedback.strengths.length > 0 && (
+          <div className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-sm lg:hover:shadow-md transition-shadow">
             <h5 className="font-semibold text-emerald-700 mb-3 flex items-center gap-2">
               <CheckCircle className="w-5 h-5" />
               Stärken
@@ -997,8 +1020,8 @@ function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
           </div>
         )}
 
-        {feedback.weaknesses && feedback.weaknesses.length > 0 && (
-          <div className="bg-white p-6 rounded-2xl border border-amber-100 shadow-sm">
+        {feedback.weaknesses && Array.isArray(feedback.weaknesses) && feedback.weaknesses.length > 0 && (
+          <div className="bg-white p-6 rounded-2xl border border-amber-100 shadow-sm lg:hover:shadow-md transition-shadow">
             <h5 className="font-semibold text-amber-700 mb-3 flex items-center gap-2">
               <BookOpen className="w-5 h-5" />
               Schwächen laut Skript
@@ -1014,6 +1037,13 @@ function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
           </div>
         )}
       </div>
+
+      {/* Minimal Fallback for unknown JSON structure */}
+      {!feedback.feedback && !hasDetails && !feedback.raw && (
+        <div className="bg-slate-50 p-4 rounded-xl text-xs font-mono text-slate-500 overflow-auto max-h-40">
+          <pre>{JSON.stringify(feedback, null, 2)}</pre>
+        </div>
+      )}
     </div>
   );
 }

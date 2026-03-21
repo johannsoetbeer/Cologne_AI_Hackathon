@@ -15,6 +15,49 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
 app.use(cors());
 app.use(express.json());
 
+// Helper for n8n webhooks with fallback from production to test
+async function callN8nWebhook(webhookUrl, payload, isMultipart = false, headers = {}) {
+  if (!webhookUrl) {
+    console.error('Webhook URL is missing in environment variables');
+    throw new Error('Webhook URL nicht konfiguriert');
+  }
+
+  const tryCall = async (url) => {
+    console.log(`Calling n8n: ${url}`);
+    const options = {
+      method: 'POST',
+      body: isMultipart ? payload : JSON.stringify(payload),
+    };
+    if (!isMultipart) {
+      options.headers = { 'Content-Type': 'application/json', ...headers };
+    } else {
+      options.headers = headers;
+    }
+
+    return await fetch(url, options);
+  };
+
+  let response = await tryCall(webhookUrl);
+
+  // Fallback to -test URL if 404
+  if (response.status === 404 && !webhookUrl.includes('-test/')) {
+    const testUrl = webhookUrl.replace('/webhook/', '/webhook-test/');
+    console.warn(`Production webhook returned 404, trying test webhook: ${testUrl}`);
+    response = await tryCall(testUrl);
+  }
+
+  if (!response.ok) {
+    throw new Error(`n8n Webhook Fehler: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.text();
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return { raw: data };
+  }
+}
+
 // ==========================================
 // COURSES (Fächer)
 // ==========================================
@@ -105,21 +148,7 @@ app.post('/api/courses/:courseId/knowledge/upload', upload.single('file'), async
     });
 
     const webhookUrl = process.env.N8N_WEBHOOK_KNOWLEDGE;
-    console.log(`Sending file "${file.originalname}" to n8n: ${webhookUrl}`);
-
-    const n8nResponse = await fetch(webhookUrl, {
-      method: 'POST',
-      body: formData,
-      headers: formData.getHeaders(),
-    });
-
-    if (!n8nResponse.ok) {
-      throw new Error(`n8n Webhook Fehler: ${n8nResponse.status} ${n8nResponse.statusText}`);
-    }
-
-    const n8nData = await n8nResponse.text();
-    let parsedN8n;
-    try { parsedN8n = JSON.parse(n8nData); } catch { parsedN8n = { raw: n8nData }; }
+    const parsedN8n = await callN8nWebhook(webhookUrl, formData, true, formData.getHeaders());
 
     console.log('n8n response:', parsedN8n);
 
@@ -184,28 +213,22 @@ app.post('/api/courses/:courseId/exams/generate', async (req, res) => {
   }
 
   try {
-    const webhookUrl = process.env.N8N_WEBHOOK_GENERATOR;
-    console.log(`Generating exam for course ${courseId}: "${prompt}"`);
+    // 1. Insert into DB first so we have a record even before n8n finishes
+    const dbResult = await pool.query(
+      'INSERT INTO public.generated_exams (course_id, prompt) VALUES ($1, $2) RETURNING *',
+      [courseId, prompt.trim()]
+    );
+    const newExam = dbResult.rows[0];
 
+    // 2. Forward to n8n
+    const webhookUrl = process.env.N8N_WEBHOOK_GENERATOR;
     const payload = {
       prompt: prompt.trim(),
-      course_id: parseInt(courseId)
+      course_id: parseInt(courseId),
+      exam_id: newExam.id
     };
 
-    const n8nResponse = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    if (!n8nResponse.ok) {
-      throw new Error(`n8n Webhook Fehler: ${n8nResponse.status} ${n8nResponse.statusText}`);
-    }
-
-    const n8nData = await n8nResponse.text();
-    let parsedN8n;
-    try { parsedN8n = JSON.parse(n8nData); } catch { parsedN8n = { raw: n8nData }; }
-
+    const parsedN8n = await callN8nWebhook(webhookUrl, payload);
     console.log('n8n exam response:', parsedN8n);
 
     // Reload exams from DB
@@ -246,30 +269,13 @@ app.post('/api/courses/:courseId/feedback', upload.single('file'), async (req, r
     const formData = new FormData();
     formData.append('course_id', courseId);
     formData.append('exam_id', exam_id);
-    if (req.body.original_latex) {
-      formData.append('original_latex', req.body.original_latex);
-    }
     formData.append('file', file.buffer, {
       filename: file.originalname,
       contentType: file.mimetype,
     });
 
     const webhookUrl = process.env.N8N_WEBHOOK_FEEDBACK;
-    console.log(`Submitting feedback for exam ${exam_id}, course ${courseId}`);
-
-    const n8nResponse = await fetch(webhookUrl, {
-      method: 'POST',
-      body: formData,
-      headers: formData.getHeaders(),
-    });
-
-    if (!n8nResponse.ok) {
-      throw new Error(`n8n Webhook Fehler: ${n8nResponse.status} ${n8nResponse.statusText}`);
-    }
-
-    const n8nData = await n8nResponse.text();
-    let parsedN8n;
-    try { parsedN8n = JSON.parse(n8nData); } catch { parsedN8n = { raw: n8nData }; }
+    const parsedN8n = await callN8nWebhook(webhookUrl, formData, true, formData.getHeaders());
 
     console.log('n8n feedback response:', parsedN8n);
 

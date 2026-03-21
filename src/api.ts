@@ -20,11 +20,11 @@ export type KnowledgeEntry = {
 export type GeneratedExam = {
   id: number;
   course_id: number;
-  prompt: string;
-  pdf_url: string | null;
-  status: string;
+  prompt?: string;
+  url: string | null;
+  evaluation_url?: string | null;
+  status?: string;
   created_at: string;
-  code: string;
 };
 
 export type FeedbackResult = {
@@ -127,11 +127,10 @@ export async function generateExam(courseId: number, prompt: string): Promise<{ 
 // ==========================================
 // Feedback
 // ==========================================
-export async function submitFeedback(courseId: number, examId: number, file: File, originalLatex: string): Promise<{ message: string; feedback: FeedbackResult }> {
+export async function submitFeedback(courseId: number, examId: number, file: File): Promise<{ message: string; feedback: FeedbackResult }> {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('exam_id', examId.toString());
-  formData.append('original_latex', originalLatex);
 
   const res = await fetch(`${API_BASE}/courses/${courseId}/feedback`, {
     method: 'POST',
