@@ -27,21 +27,35 @@ export type GeneratedExam = {
   created_at: string;
 };
 
-export type FeedbackResult = {
-  grade?: string;
-  total_score?: string;
-  score?: number;
-  max_score?: number;
-  feedback?: string;
-  tasks?: Array<{
-    task: string;
-    score: string;
-    feedback: string;
-  }>;
-  strengths?: string[];
-  weaknesses?: string[];
-  [key: string]: unknown;
+export type FeedbackTaskResult = {
+  label: string;
+  question: string;
+  achieved_points: number;
+  max_points: number;
+  confidence: string;
+  used_fallback: boolean;
+  feedback: {
+    summary: string;
+    correct_solution: {
+      type: string;
+      explanation: string;
+    };
+    what_was_good: string[];
+    what_to_improve: string[];
+    tips: string[];
+    note_on_missing_data: string;
+  };
+  missing_points: string[];
+  strengths: string[];
 };
+
+export type FeedbackResponse = {
+  success: boolean;
+  results: FeedbackTaskResult[];
+};
+
+export type FeedbackResult = FeedbackResponse[];
+
 
 // ==========================================
 // Courses

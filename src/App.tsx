@@ -1018,7 +1018,8 @@ function FeedbackTab({
                     Upload new file
                   </button>
                 </div>
-                <FeedbackCard feedback={feedbackResult} />
+                <FeedbackCard feedbackResult={feedbackResult} />
+
               </div>
             )}
           </div>
@@ -1031,110 +1032,124 @@ function FeedbackTab({
 // ==========================================
 // Feedback Card Component
 // ==========================================
-function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
-  // Try to find score/grade in potentially different fields
-  const score = feedback.score ?? feedback.total_score ?? 0;
-  const maxScore = feedback.max_score ?? 20;
-  const grade = feedback.grade || (typeof score === 'number' ? (score / maxScore > 0.5 ? 'Passed' : 'Failed') : 'N/A');
-  const percentage = maxScore > 0 && typeof score === 'number' ? Math.round((score / maxScore) * 100) : null;
+function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult }) {
+  // n8n returns an array of items. We take the first one and its results.
+  const feedback = feedbackResult[0];
+  if (!feedback || !feedback.results) {
+    return (
+      <div className="bg-slate-50 p-4 rounded-xl text-xs font-mono text-slate-500 overflow-auto max-h-40">
+        <pre>{JSON.stringify(feedbackResult, null, 2)}</pre>
+      </div>
+    );
+  }
 
-  // Check if we have structured data or just a raw string
-  const hasDetails = (feedback.tasks && feedback.tasks.length > 0) || feedback.strengths || feedback.weaknesses;
+  const results = feedback.results;
+  const totalAchieved = results.reduce((acc, r) => acc + r.achieved_points, 0);
+  const totalMax = results.reduce((acc, r) => acc + r.max_points, 0);
+  const percentage = totalMax > 0 ? Math.round((totalAchieved / totalMax) * 100) : 0;
+  const grade = percentage >= 50 ? 'Passed' : 'Failed';
 
   return (
     <div className="bg-gradient-to-br from-white to-indigo-50/30 p-8 rounded-3xl border border-slate-200 shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center gap-4 mb-8">
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-200 shrink-0">
-          {grade}
+          {grade === 'Passed' ? '😊' : '😟'}
         </div>
         <div>
-          <h4 className="text-2xl font-bold text-slate-800 tracking-tight">Exam Result</h4>
+          <h4 className="text-2xl font-bold text-slate-800 tracking-tight">Korrektur-Ergebnis</h4>
           <p className="text-indigo-600 font-medium">
-            {typeof score === 'number' ? `${score} of ${maxScore} Pointsn` : String(score)} {percentage !== null && `(${percentage}%)`}
+            {totalAchieved} von {totalMax} Punkten ({percentage}%)
           </p>
         </div>
       </div>
 
-      {/* General Feedback or Raw Text */}
-      {!!feedback.feedback && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-6">
-          <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{String(feedback.feedback)}</p>
-        </div>
-      )}
-
-      {!feedback.feedback && !hasDetails && !!feedback.raw && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-6">
-          <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{String(feedback.raw)}</p>
-        </div>
-      )}
-
-      {/* Per-task feedback */}
-      {feedback.tasks && feedback.tasks.length > 0 && (
-        <div className="space-y-4 mb-6">
-          <h5 className="font-semibold text-slate-800">Feedback per Task</h5>
-          {feedback.tasks.map((task, i) => (
-            <div key={i} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:border-indigo-100 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold text-slate-700">{task.task}</span>
-                <span className="text-sm font-semibold text-indigo-600">{task.score}</span>
+      <div className="space-y-6">
+        {results.map((res, i) => (
+          <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:border-indigo-100 transition-colors">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-bold">
+                  Aufgabe {res.label}
+                </span>
+                <h5 className="font-bold text-slate-800">{res.question}</h5>
               </div>
-              <p className="text-sm text-slate-600">{task.feedback}</p>
+              <span className="text-sm font-bold text-indigo-600">
+                {res.achieved_points} / {res.max_points} Pkt.
+              </span>
             </div>
-          ))}
-        </div>
-      )}
 
-      {/* Strengths & Weaknesses */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {feedback.strengths && Array.isArray(feedback.strengths) && feedback.strengths.length > 0 && (
-          <div className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-sm lg:hover:shadow-md transition-shadow">
-            <h5 className="font-semibold text-emerald-700 mb-3 flex items-center gap-2">
-              <CheckCircle className="w-5 h-5" />
-              Strengths
-            </h5>
-            <ul className="space-y-2 text-sm text-slate-600">
-              {feedback.strengths.map((s, i) => (
-                <li key={i} className="flex gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
-                  {s}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+            <div className="space-y-4">
+              <div className="bg-slate-50 p-4 rounded-xl text-sm text-slate-700">
+                <p className="font-semibold mb-1 text-slate-900">Zusammenfassung:</p>
+                {res.feedback.summary}
+              </div>
 
-        {feedback.weaknesses && Array.isArray(feedback.weaknesses) && feedback.weaknesses.length > 0 && (
-          <div className="bg-white p-6 rounded-2xl border border-amber-100 shadow-sm lg:hover:shadow-md transition-shadow">
-            <h5 className="font-semibold text-amber-700 mb-3 flex items-center gap-2">
-              <BookOpen className="w-5 h-5" />
-              Weaknesses based on script
-            </h5>
-            <ul className="space-y-2 text-sm text-slate-600">
-              {feedback.weaknesses.map((w, i) => (
-                <li key={i} className="flex gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
-                  {w}
-                </li>
-              ))}
-            </ul>
+              {res.feedback.correct_solution.explanation && (
+                <div className="text-sm">
+                  <p className="font-semibold text-slate-900 mb-1">Musterlösung / Erklärung:</p>
+                  <p className="text-slate-600 italic px-4 border-l-2 border-indigo-200">
+                    {res.feedback.correct_solution.explanation}
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                {res.feedback.what_was_good.length > 0 && (
+                  <div className="bg-emerald-50/50 p-4 rounded-xl">
+                    <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2">Was gut war:</p>
+                    <ul className="text-xs text-slate-600 space-y-1">
+                      {res.feedback.what_was_good.map((item, idx) => (
+                        <li key={idx} className="flex gap-2">
+                          <CheckCircle className="w-3 h-3 text-emerald-500 mt-0.5 shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {res.feedback.what_to_improve.length > 0 && (
+                  <div className="bg-amber-50/50 p-4 rounded-xl">
+                    <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-2">Verbesserungspotenzial:</p>
+                    <ul className="text-xs text-slate-600 space-y-1">
+                      {res.feedback.what_to_improve.map((item, idx) => (
+                        <li key={idx} className="flex gap-2">
+                          <AlertCircle className="w-3 h-3 text-amber-500 mt-0.5 shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              
+              {res.strengths.length > 0 && (
+                <div className="mt-2">
+                  <div className="flex flex-wrap gap-2">
+                    {res.strengths.map((str, idx) => (
+                      <span key={idx} className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md text-[10px] font-semibold uppercase">
+                        💪 {str}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        ))}
       </div>
-
-      {/* Minimal Fallback for unknown JSON structure */}
-      {!feedback.feedback && !hasDetails && !feedback.raw && (
-        <div className="bg-slate-50 p-4 rounded-xl text-xs font-mono text-slate-500 overflow-auto max-h-40">
-          <pre>{JSON.stringify(feedback, null, 2)}</pre>
-        </div>
-      )}
     </div>
   );
 }
 
+
 // ==========================================
 // Tab 4: Flashcards
 // ==========================================
-function FlashcardsTab() {
+function FlashcardsTab({
+  courseId,
+}: {
+  courseId: number;
+}) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
   const [flashcards, setFlashcards] = useState<{question: string, answer: string}[]>([]);
@@ -1151,7 +1166,12 @@ function FlashcardsTab() {
     try {
       const response = await fetch('https://abudi42.app.n8n.cloud/webhook-test/70745a2e-aa3c-4b4a-ba8c-60feb711044b', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ course_id: courseId }),
       });
+
       
       if (!response.ok) {
         throw new Error('Fehler beim Abrufen der Flashcards');
