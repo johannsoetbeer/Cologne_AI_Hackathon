@@ -312,8 +312,7 @@ function sanitizeLatexCode(rawLatex) {
   // 3. Remove any packages NOT in our safe list (to prevent compilation errors)
   const safePackages = [
     'inputenc', 'fontenc', 'geometry', 'amsmath', 'amssymb',
-    'amsfonts', 'graphicx', 'tabularx', 'booktabs', 'verbatim',
-    'listings', 'xcolor', 'hyperref', 'url', 'mathtools',
+    'amsfonts', 'graphicx', 'tabularx', 'booktabs', 'verbatim'
   ];
 
   // Replace problematic usepackage lines with a comment
@@ -579,7 +578,100 @@ Generate the LaTeX exam now.`;
 
     console.log(`✅ Exam saved to DB: id=${newExam.id}, url=${pdfUrl}`);
 
-    // ───── Step 8: Return result ─────
+    // ───── Step 8: Generate Sample Solution (Musterlösung) ─────
+    console.log(`🤖 Generating sample solution for exam ${newExam.id}...`);
+    try {
+      const solutionSystemPrompt = `You are an expert university professor and LaTeX typesetter.
+Your ONLY job: write the SAMPLE SOLUTION (Musterlösung) for the provided LaTeX exam.
+
+CONTENT RULES:
+1. YOU MUST include the EXACT task descriptions from the original exam text.
+2. Directly below each task description, provide the detailed, correct solution and the allocated points.
+3. MONOLINGUAL — match the language of the provided exam exactly.
+4. NO HALLUCINATIONS — stick to the facts for the solutions.
+
+LATEX RULES (CRITICAL — violations cause compilation failure):
+5. You MUST use EXACTLY this document preamble — do NOT add ANY other \\usepackage commands:
+
+\\documentclass[12pt,a4paper]{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage[T1]{fontenc}
+\\usepackage{geometry}
+\\geometry{left=2.5cm,right=2.5cm,top=2cm,bottom=2cm}
+\\usepackage{amsmath,amssymb}
+
+6. DO NOT use fancyhdr, enumitem, extramarks, babel, listings, tikz, pgfplots, minted, tcolorbox, mdframed, hyperref, xcolor.
+7. For lists use \\begin{enumerate} or \\begin{itemize} WITHOUT any optional arguments.
+8. For code snippets use \\begin{verbatim}...\\end{verbatim}.
+9. DO NOT use \\cleardoublepage — use \\newpage instead.
+10. Escape special characters: \\%, \\&, \\_, \\#, \\{ \\} outside of math/verbatim. UNESCAPED UNDERSCORES '_' OUTSIDE MATH MODE WILL FATALLY CRASH THE COMPILER.
+11. STRICT: DO NOT use raw unicode math characters (like ≥, ≤, ×, ≠). ALWAYS use standard LaTeX math commands (\\geq, \\leq, \\times, \\neq).
+12. Ensure strict mathematical environments: every '_' or '^' must be enclosed in '$ ... $', '\\[ ... \\]' or a math environment. Never leave them floating.
+
+OUTPUT FORMAT:
+- Return ONLY raw LaTeX.
+- Start with \\documentclass, end with \\end{document}.
+- No markdown fences, no JSON wrapping, no commentary.`;
+
+      const solutionUserPrompt = `Here is the EXACT generated exam LaTeX code:
+
+${latexCode}
+
+---
+
+Write the complete Sample Solution (Musterlösung) LaTeX document now. Make sure to clearly mark solutions (e.g., using \\textbf{Lösung:...} - DO NOT USE COLORS).`;
+
+      const solResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: solutionSystemPrompt },
+            { role: 'user', content: solutionUserPrompt },
+          ],
+          temperature: 0.5,
+          max_tokens: 8000,
+        }),
+      });
+
+      if (!solResponse.ok) {
+        throw new Error(`OpenAI API failed on solution: ${solResponse.status}`);
+      }
+
+      const solData = await solResponse.json();
+      let solLatex = solData.choices?.[0]?.message?.content || '';
+      solLatex = sanitizeLatexCode(solLatex);
+
+      if (!solLatex.includes('\\documentclass')) {
+        throw new Error('AI did not return valid LaTeX code for solution.');
+      }
+
+      console.log(`✅ Generated ${solLatex.length} chars of Solution LaTeX code`);
+      console.log('📐 Compiling Solution LaTeX to PDF...');
+      const solPdfBuffer = await compileLatexToPdf(solLatex);
+
+      console.log('☁️  Uploading Solution PDF to Cloudinary...');
+      const solCloudinaryResult = await uploadPdfToCloudinary(solPdfBuffer, `solution_${safeName}_${Date.now()}`);
+      const solutionUrl = solCloudinaryResult.secure_url;
+      console.log(`✅ Uploaded Solution to Cloudinary: ${solutionUrl}`);
+
+      // Update the evaluation_url on the same row in generated_exams
+      await pool.query(
+        'UPDATE public.generated_exams SET evaluation_url = $1 WHERE id = $2',
+        [solutionUrl, newExam.id]
+      );
+      newExam.evaluation_url = solutionUrl;
+      console.log('✅ Solution URL attached to DB record');
+    } catch (solErr) {
+      console.error('❌ Failed to generate/upload sample solution:', solErr.message);
+      // We don't fail the whole API request, so the user at least gets the Exam.
+    }
+
+    // ───── Step 9: Return result ─────
     const result = await pool.query(
       'SELECT * FROM public.generated_exams WHERE course_id = $1 ORDER BY id DESC',
       [courseId]
