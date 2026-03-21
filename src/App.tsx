@@ -185,16 +185,14 @@ export default function App() {
               <div key={subject.id} className="relative group w-full flex items-center">
                 <button
                   onClick={() => handleSelectSubject(subject.id)}
-                  className={`flex-1 flex items-center gap-3 py-2.5 pl-3 pr-10 rounded-xl transition-all duration-200 text-left ${
-                    activeSubjectId === subject.id
+                  className={`flex-1 flex items-center gap-3 py-2.5 pl-3 pr-10 rounded-xl transition-all duration-200 text-left ${activeSubjectId === subject.id
                       ? 'bg-indigo-50 text-indigo-700 font-medium shadow-sm'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   <Folder
-                    className={`w-5 h-5 shrink-0 ${
-                      activeSubjectId === subject.id ? 'text-indigo-600' : 'text-slate-400'
-                    }`}
+                    className={`w-5 h-5 shrink-0 ${activeSubjectId === subject.id ? 'text-indigo-600' : 'text-slate-400'
+                      }`}
                   />
                   <span className="truncate">{subject.name}</span>
                   {activeSubjectId === subject.id && (
@@ -204,9 +202,8 @@ export default function App() {
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDeleteSubject(subject.id, subject.name); }}
                   disabled={isDeletingCourseId === subject.id}
-                  className={`absolute right-2 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-opacity flex ${
-                    activeSubjectId === subject.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto'
-                  }`}
+                  className={`absolute right-2 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-opacity flex ${activeSubjectId === subject.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto'
+                    }`}
                   title="Delete course"
                 >
                   {isDeletingCourseId === subject.id ? (
@@ -392,9 +389,8 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`relative flex items-center gap-2 py-4 px-2 text-sm font-medium transition-colors ${
-        active ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-800'
-      }`}
+      className={`relative flex items-center gap-2 py-4 px-2 text-sm font-medium transition-colors ${active ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-800'
+        }`}
     >
       {icon}
       {children}
@@ -420,7 +416,7 @@ function DatabaseTab({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
-  const [optimisticDocs, setOptimisticDocs] = useState<{name: string, date: number}[]>([]);
+  const [optimisticDocs, setOptimisticDocs] = useState<{ name: string, date: number }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -450,7 +446,7 @@ function DatabaseTab({
       alert('No URL for this document found in the database (Cloudinary).');
       return;
     }
-    
+
     window.open(url, '_blank');
   };
 
@@ -518,13 +514,12 @@ function DatabaseTab({
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`border-2 border-dashed rounded-3xl p-12 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 group ${
-          isDragging
+        className={`border-2 border-dashed rounded-3xl p-12 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 group ${isDragging
             ? 'border-indigo-500 bg-indigo-100/50 scale-[1.02]'
             : isUploading
-            ? 'border-amber-300 bg-amber-50/50 cursor-wait'
-            : 'border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-400'
-        }`}
+              ? 'border-amber-300 bg-amber-50/50 cursor-wait'
+              : 'border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-400'
+          }`}
       >
         <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
 
@@ -549,9 +544,8 @@ function DatabaseTab({
       </div>
 
       {uploadStatus && !isUploading && (
-        <div className={`text-sm font-medium px-4 py-2 rounded-xl text-center ${
-          uploadStatus.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
-        }`}>
+        <div className={`text-sm font-medium px-4 py-2 rounded-xl text-center ${uploadStatus.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+          }`}>
           {uploadStatus}
         </div>
       )}
@@ -721,11 +715,10 @@ function GeneratorTab({
                   <button
                     key={level}
                     onClick={() => setDifficulty(level)}
-                    className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium border transition-all ${
-                      difficulty === level
+                    className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium border transition-all ${difficulty === level
                         ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm'
                         : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
-                    }`}
+                      }`}
                   >
                     {level.charAt(0).toUpperCase() + level.slice(1)}
                   </button>
@@ -764,11 +757,10 @@ function GeneratorTab({
         <button
           onClick={handleGenerate}
           disabled={isGenerating}
-          className={`w-full py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md ${
-            isGenerating
+          className={`w-full py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md ${isGenerating
               ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
               : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:-translate-y-0.5'
-          }`}
+            }`}
         >
           {isGenerating ? (
             <>
@@ -954,11 +946,10 @@ function FeedbackTab({
                 {/* Simplified Upload Zone */}
                 <div
                   onClick={() => !isUploading && fileInputRef.current?.click()}
-                  className={`border-2 border-dashed rounded-3xl p-12 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${
-                    isUploading
+                  className={`border-2 border-dashed rounded-3xl p-12 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${isUploading
                       ? 'border-amber-300 bg-amber-50/50 cursor-wait'
                       : 'border-indigo-200 bg-white hover:bg-indigo-50 hover:border-indigo-400'
-                  }`}
+                    }`}
                 >
                   <input
                     ref={fileInputRef}
@@ -1011,7 +1002,7 @@ function FeedbackTab({
               <div className="max-w-4xl mx-auto space-y-6">
                 <div className="flex items-center justify-between">
                   <h4 className="text-2xl font-bold text-slate-800">Your Statistics</h4>
-                  <button 
+                  <button
                     onClick={() => { setFeedbackResult(null); setFile(null); }}
                     className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
                   >
@@ -1032,101 +1023,212 @@ function FeedbackTab({
 // ==========================================
 // Feedback Card Component
 // ==========================================
-function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult }) {
-  // n8n returns an array of items. We take the first one and its results.
-  const feedback = feedbackResult[0];
-  if (!feedback || !feedback.results) {
+function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult | any }) {
+  // Normalize the input: n8n might return an array of items or a single object.
+  // We want the object that contains the `results` array.
+  let feedbackObj = feedbackResult;
+  if (Array.isArray(feedbackResult)) {
+    // If it's an array, look for the first item that has 'results' or 'success'
+    feedbackObj = feedbackResult.find(item => item.results) || feedbackResult[0];
+  }
+
+  // Fallback: If no structured results, try to render raw or old format
+  if (!feedbackObj || !feedbackObj.results || !Array.isArray(feedbackObj.results)) {
     return (
-      <div className="bg-slate-50 p-4 rounded-xl text-xs font-mono text-slate-500 overflow-auto max-h-40">
+      <div className="bg-slate-50 p-6 rounded-2xl text-sm font-mono text-slate-600 overflow-auto max-h-[500px] border border-slate-200">
+        <div className="flex items-center gap-2 mb-4 text-amber-600 font-semibold font-sans">
+          <AlertCircle className="w-5 h-5" />
+          <span>Das Format der Korrektur konnte nicht als detaillierte Auswertung gelesen werden.</span>
+        </div>
         <pre>{JSON.stringify(feedbackResult, null, 2)}</pre>
       </div>
     );
   }
 
-  const results = feedback.results;
-  const totalAchieved = results.reduce((acc, r) => acc + r.achieved_points, 0);
-  const totalMax = results.reduce((acc, r) => acc + r.max_points, 0);
+  const results = feedbackObj.results;
+  const totalAchieved = results.reduce((acc: number, r: any) => acc + (r.achieved_points || 0), 0);
+  const totalMax = results.reduce((acc: number, r: any) => acc + (r.max_points || 0), 0);
   const percentage = totalMax > 0 ? Math.round((totalAchieved / totalMax) * 100) : 0;
-  const grade = percentage >= 50 ? 'Passed' : 'Failed';
+
+  // Determine Grade based on standard university thresholds
+  let grade = 'Nicht bestanden';
+  let gradeBg = 'bg-red-50 border-red-200';
+  let gradeText = 'text-red-700';
+
+  if (percentage >= 95) { grade = '1.0 (Sehr gut)'; gradeBg = 'bg-emerald-50 border-emerald-200'; gradeText = 'text-emerald-700'; }
+  else if (percentage >= 90) { grade = '1.3 (Sehr gut)'; gradeBg = 'bg-emerald-50 border-emerald-200'; gradeText = 'text-emerald-700'; }
+  else if (percentage >= 85) { grade = '1.7 (Gut)'; gradeBg = 'bg-green-50 border-green-200'; gradeText = 'text-green-700'; }
+  else if (percentage >= 80) { grade = '2.0 (Gut)'; gradeBg = 'bg-green-50 border-green-200'; gradeText = 'text-green-700'; }
+  else if (percentage >= 75) { grade = '2.3 (Gut)'; gradeBg = 'bg-green-50 border-green-200'; gradeText = 'text-green-700'; }
+  else if (percentage >= 70) { grade = '2.7 (Befriedigend)'; gradeBg = 'bg-blue-50 border-blue-200'; gradeText = 'text-blue-700'; }
+  else if (percentage >= 65) { grade = '3.0 (Befriedigend)'; gradeBg = 'bg-blue-50 border-blue-200'; gradeText = 'text-blue-700'; }
+  else if (percentage >= 60) { grade = '3.3 (Befriedigend)'; gradeBg = 'bg-blue-50 border-blue-200'; gradeText = 'text-blue-700'; }
+  else if (percentage >= 55) { grade = '3.7 (Ausreichend)'; gradeBg = 'bg-amber-50 border-amber-200'; gradeText = 'text-amber-700'; }
+  else if (percentage >= 50) { grade = '4.0 (Ausreichend)'; gradeBg = 'bg-amber-50 border-amber-200'; gradeText = 'text-amber-700'; }
+
 
   return (
-    <div className="bg-gradient-to-br from-white to-indigo-50/30 p-8 rounded-3xl border border-slate-200 shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-200 shrink-0">
-          {grade === 'Passed' ? '😊' : '😟'}
-        </div>
-        <div>
-          <h4 className="text-2xl font-bold text-slate-800 tracking-tight">Korrektur-Ergebnis</h4>
-          <p className="text-indigo-600 font-medium">
-            {totalAchieved} von {totalMax} Punkten ({percentage}%)
-          </p>
-        </div>
-      </div>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-      <div className="space-y-6">
-        {results.map((res, i) => (
-          <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:border-indigo-100 transition-colors">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <span className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-bold">
-                  Aufgabe {res.label}
-                </span>
-                <h5 className="font-bold text-slate-800">{res.question}</h5>
+      {/* Overview Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Total Score / Grade Card */}
+        <div className={`col-span-1 md:col-span-2 p-8 rounded-3xl border shadow-lg relative overflow-hidden ${gradeBg}`}>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
+
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div>
+              <h4 className="text-xl font-bold mb-1 opacity-80 text-slate-800">Gesamtergebnis</h4>
+              <div className="flex items-baseline gap-3">
+                <span className={`text-5xl font-extrabold tracking-tight ${gradeText}`}>{percentage}%</span>
+                <span className={`text-xl font-medium ${gradeText} opacity-80`}>({totalAchieved} / {totalMax} Pkt)</span>
               </div>
-              <span className="text-sm font-bold text-indigo-600">
-                {res.achieved_points} / {res.max_points} Pkt.
-              </span>
+              <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white/60 backdrop-blur-sm rounded-xl font-bold ${gradeText} shadow-sm border border-white/50`}>
+                {percentage >= 50 ? '🎉 Bestanden' : '💔 Durchgefallen'} - {grade}
+              </div>
             </div>
 
+            {/* Circular Progress */}
+            <div className="relative w-32 h-32 shrink-0">
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/40" />
+                <circle
+                  cx="50" cy="50" r="40"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeDasharray={`${2 * Math.PI * 40}`}
+                  strokeDashoffset={`${2 * Math.PI * 40 * (1 - percentage / 100)}`}
+                  className={`${gradeText} drop-shadow-md transition-all duration-1000 ease-out`}
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Aggregate Strengths / Weaknesses Overview */}
+        <div className="col-span-1 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-indigo-500" /> Auswertung
+            </h4>
             <div className="space-y-4">
-              <div className="bg-slate-50 p-4 rounded-xl text-sm text-slate-700">
-                <p className="font-semibold mb-1 text-slate-900">Zusammenfassung:</p>
-                {res.feedback.summary}
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-500">Bearbeitete Aufgaben</span>
+                <span className="font-bold text-slate-700">{results.length}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-500">Volle Punktzahl</span>
+                <span className="font-bold text-emerald-600">{results.filter((r: any) => r.achieved_points === r.max_points).length}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-500">Teilpunkte</span>
+                <span className="font-bold text-amber-600">{results.filter((r: any) => r.achieved_points > 0 && r.achieved_points < r.max_points).length}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-500">Keine Punkte</span>
+                <span className="font-bold text-red-600">{results.filter((r: any) => r.achieved_points === 0).length}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+    {/* Detailed Tasks Breakdown */ }
+    <div className="space-y-6">
+      <h3 className="text-xl font-bold text-slate-800 px-2">Aufgaben-Details</h3>
+      {results.map((res: any, i: number) => {
+      const taskPercent = res.max_points > 0 ? (res.achieved_points / res.max_points) * 100 : 0;
+      const isFull = res.achieved_points === res.max_points;
+      const isZero = res.achieved_points === 0;
+
+      return (
+        <div key={i} className={`bg-white p-6 md:p-8 rounded-3xl border-2 transition-all duration-300 shadow-sm hover:shadow-md ${isFull ? 'border-emerald-100 hover:border-emerald-300' : isZero ? 'border-red-100 hover:border-red-300' : 'border-amber-100 hover:border-amber-300'}`}>
+          {/* Task Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-100">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <span className={`px-3 py-1 rounded-lg text-sm font-bold ${isFull ? 'bg-emerald-100 text-emerald-700' : isZero ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                  Aufgabe {res.label}
+                </span>
+                <div className="h-2 flex-1 max-w-[200px] bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${isFull ? 'bg-emerald-500' : isZero ? 'bg-red-500' : 'bg-amber-500'}`}
+                    style={{ width: `${taskPercent}%` }}
+                  />
+                </div>
+              </div>
+              <h5 className="text-lg font-bold text-slate-800 leading-snug">{res.question}</h5>
+            </div>
+
+            <div className={`shrink-0 flex flex-col items-end`}>
+              <span className={`text-2xl font-black ${isFull ? 'text-emerald-600' : isZero ? 'text-red-500' : 'text-amber-600'}`}>
+                {res.achieved_points} / {res.max_points}
+              </span>
+              <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">Punkte</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column: Feedback & Explanation */}
+            <div className="space-y-6">
+              <div>
+                <h6 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Feedback</h6>
+                <p className="text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-2xl">{res.feedback.summary}</p>
               </div>
 
-              {res.feedback.correct_solution.explanation && (
-                <div className="text-sm">
-                  <p className="font-semibold text-slate-900 mb-1">Musterlösung / Erklärung:</p>
-                  <p className="text-slate-600 italic px-4 border-l-2 border-indigo-200">
+              {res.feedback.correct_solution?.explanation && (
+                <div>
+                  <h6 className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" /> Musterlösung
+                  </h6>
+                  <p className="text-slate-600 italic leading-relaxed pl-4 border-l-4 border-indigo-200">
                     {res.feedback.correct_solution.explanation}
                   </p>
                 </div>
               )}
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                {res.feedback.what_was_good.length > 0 && (
-                  <div className="bg-emerald-50/50 p-4 rounded-xl">
-                    <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2">Was gut war:</p>
-                    <ul className="text-xs text-slate-600 space-y-1">
-                      {res.feedback.what_was_good.map((item, idx) => (
-                        <li key={idx} className="flex gap-2">
-                          <CheckCircle className="w-3 h-3 text-emerald-500 mt-0.5 shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {res.feedback.what_to_improve.length > 0 && (
-                  <div className="bg-amber-50/50 p-4 rounded-xl">
-                    <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-2">Verbesserungspotenzial:</p>
-                    <ul className="text-xs text-slate-600 space-y-1">
-                      {res.feedback.what_to_improve.map((item, idx) => (
-                        <li key={idx} className="flex gap-2">
-                          <AlertCircle className="w-3 h-3 text-amber-500 mt-0.5 shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-              
-              {res.strengths.length > 0 && (
-                <div className="mt-2">
+            {/* Right Column: Good/Improve & Strengths */}
+            <div className="space-y-4">
+              {res.feedback.what_was_good?.length > 0 && (
+                <div className="bg-emerald-50/50 border border-emerald-100 p-5 rounded-2xl">
+                  <h6 className="text-sm font-bold text-emerald-700 flex items-center gap-2 mb-3">
+                    <CheckCircle className="w-4 h-4" /> Was lief gut
+                  </h6>
+                  <ul className="text-sm text-slate-700 space-y-2">
+                    {res.feedback.what_was_good.map((item: string, idx: number) => (
+                      <li key={idx} className="flex gap-3">
+                        <span className="text-emerald-500 font-bold mt-0.5">•</span>
+                        <span className="leading-relaxed">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {res.feedback.what_to_improve?.length > 0 && (
+                <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
+                  <h6 className="text-sm font-bold text-amber-700 flex items-center gap-2 mb-3">
+                    <AlertCircle className="w-4 h-4" /> Verbesserungspotenzial
+                  </h6>
+                  <ul className="text-sm text-slate-700 space-y-2">
+                    {res.feedback.what_to_improve.map((item: string, idx: number) => (
+                      <li key={idx} className="flex gap-3">
+                        <span className="text-amber-500 font-bold mt-0.5">•</span>
+                        <span className="leading-relaxed">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {res.strengths?.length > 0 && (
+                <div className="pt-2">
                   <div className="flex flex-wrap gap-2">
-                    {res.strengths.map((str, idx) => (
-                      <span key={idx} className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md text-[10px] font-semibold uppercase">
+                    {res.strengths.map((str: string, idx: number) => (
+                      <span key={idx} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold ring-1 ring-indigo-200/50 shadow-sm">
                         💪 {str}
                       </span>
                     ))}
@@ -1135,13 +1237,13 @@ function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult }) {
               )}
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      );
+    })}
     </div>
+  </div>
   );
 }
-
-
 // ==========================================
 // Tab 4: Flashcards
 // ==========================================
@@ -1152,7 +1254,7 @@ function FlashcardsTab({
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
-  const [flashcards, setFlashcards] = useState<{question: string, answer: string}[]>([]);
+  const [flashcards, setFlashcards] = useState<{ question: string, answer: string }[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [csvContent, setCsvContent] = useState<string | null>(null);
@@ -1162,7 +1264,7 @@ function FlashcardsTab({
     setGenError(null);
     setFlashcards([]);
     setCsvContent(null);
-    
+
     try {
       const response = await fetch('https://abudi42.app.n8n.cloud/webhook-test/70745a2e-aa3c-4b4a-ba8c-60feb711044b', {
         method: 'POST',
@@ -1172,14 +1274,14 @@ function FlashcardsTab({
         body: JSON.stringify({ course_id: courseId }),
       });
 
-      
+
       if (!response.ok) {
         throw new Error('Fehler beim Abrufen der Flashcards');
       }
 
       const csvText = await response.text();
       setCsvContent(csvText);
-      
+
       const lines = csvText.split('\n');
       const parsedCards = lines
         .map(line => line.trim())
@@ -1189,7 +1291,7 @@ function FlashcardsTab({
           return { question: parts[0] || '', answer: parts.slice(1).join(';') || '' };
         })
         .filter(card => card.question && card.answer);
-        
+
       setFlashcards(parsedCards);
       setCurrentIndex(0);
       setIsFlipped(false);
@@ -1244,15 +1346,14 @@ function FlashcardsTab({
           <p className="text-slate-500 mb-8 max-w-sm mx-auto leading-relaxed">
             Let our AI extract the most important questions from your old exams for you.
           </p>
-          
+
           <button
             onClick={handleGenerate}
             disabled={isGenerating}
-            className={`w-full max-w-sm mx-auto py-5 rounded-2xl font-semibold flex items-center justify-center gap-3 transition-all shadow-md text-lg ${
-              isGenerating
+            className={`w-full max-w-sm mx-auto py-5 rounded-2xl font-semibold flex items-center justify-center gap-3 transition-all shadow-md text-lg ${isGenerating
                 ? 'bg-slate-100 text-slate-500 cursor-wait shadow-none'
                 : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-xl hover:-translate-y-1'
-            }`}
+              }`}
           >
             {isGenerating ? (
               <>
@@ -1287,10 +1388,10 @@ function FlashcardsTab({
                 </p>
                 <span className="absolute bottom-6 text-slate-400 text-sm animate-pulse">Click to flip</span>
               </div>
-              
+
               {/* BACK */}
               <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-3xl p-8 flex flex-col items-center justify-center text-center rotate-y-180">
-                 <span className="absolute top-6 left-8 text-indigo-500 font-semibold tracking-wider text-sm uppercase">Answer</span>
+                <span className="absolute top-6 left-8 text-indigo-500 font-semibold tracking-wider text-sm uppercase">Answer</span>
                 <p className="text-xl font-medium text-slate-700 leading-relaxed overflow-y-auto w-full px-4 max-h-[80%] custom-scrollbar">
                   {flashcards[currentIndex].answer}
                 </p>
@@ -1300,30 +1401,30 @@ function FlashcardsTab({
 
           {/* CONTROLS */}
           <div className="flex items-center justify-between bg-white px-6 py-4 rounded-2xl shadow-sm border border-slate-200">
-             <button
-                onClick={prevCard}
-                disabled={currentIndex === 0}
-                className="px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 text-slate-700"
-              >
-                ⬅️ Vorherige Karte
-              </button>
-              
-              <div className="font-semibold text-slate-600 tracking-wide">
-                Karte {currentIndex + 1} von {flashcards.length}
-              </div>
+            <button
+              onClick={prevCard}
+              disabled={currentIndex === 0}
+              className="px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 text-slate-700"
+            >
+              ⬅️ Vorherige Karte
+            </button>
 
-              <button
-                onClick={nextCard}
-                disabled={currentIndex === flashcards.length - 1}
-                className="px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 text-slate-700"
-              >
-                Nächste Karte ➡️
-              </button>
+            <div className="font-semibold text-slate-600 tracking-wide">
+              Karte {currentIndex + 1} von {flashcards.length}
+            </div>
+
+            <button
+              onClick={nextCard}
+              disabled={currentIndex === flashcards.length - 1}
+              className="px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 text-slate-700"
+            >
+              Nächste Karte ➡️
+            </button>
           </div>
 
-           {/* EXPORT ACTION */}
+          {/* EXPORT ACTION */}
           <div className="pt-4">
-             <button
+            <button
               onClick={handleDownloadCsv}
               className="w-full py-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-sm hover:shadow"
             >
