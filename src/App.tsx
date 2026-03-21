@@ -32,7 +32,6 @@ import {
   type KnowledgeEntry,
   type GeneratedExam,
   type FeedbackResult,
-  generateFlashcards,
 } from './api';
 
 type Tab = 'database' | 'generator' | 'feedback' | 'flashcards';
@@ -1135,10 +1134,10 @@ function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
 // ==========================================
 // Tab 4: Flashcards
 // ==========================================
-function FlashcardsTab({ courseId }: { courseId: number }) {
+function FlashcardsTab() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
-  const [cards, setCards] = useState<{front: string, back: string}[]>([]);
+  const [flashcards, setFlashcards] = useState<{question: string, answer: string}[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [csvContent, setCsvContent] = useState<string | null>(null);
@@ -1146,25 +1145,32 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
   const handleGenerate = async () => {
     setIsGenerating(true);
     setGenError(null);
-    setCards([]);
+    setFlashcards([]);
     setCsvContent(null);
     
     try {
-      const csv = await generateFlashcards(courseId);
-      setCsvContent(csv);
+      const response = await fetch('https://abudi42.app.n8n.cloud/webhook-test/70745a2e-aa3c-4b4a-ba8c-60feb711044b', {
+        method: 'POST',
+      });
       
-      // Parse CSV (simple semicolon split)
-      const lines = csv.split('\n');
+      if (!response.ok) {
+        throw new Error('Fehler beim Abrufen der Flashcards');
+      }
+
+      const csvText = await response.text();
+      setCsvContent(csvText);
+      
+      const lines = csvText.split('\n');
       const parsedCards = lines
         .map(line => line.trim())
         .filter(line => line.length > 0)
         .map(line => {
-          const [front, ...rest] = line.split(';');
-          return { front: front || '', back: rest.join(';') || '' };
+          const parts = line.split(';');
+          return { question: parts[0] || '', answer: parts.slice(1).join(';') || '' };
         })
-        .filter(card => card.front && card.back);
+        .filter(card => card.question && card.answer);
         
-      setCards(parsedCards);
+      setFlashcards(parsedCards);
       setCurrentIndex(0);
       setIsFlipped(false);
     } catch (err) {
@@ -1180,7 +1186,7 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `flashcards_course_${courseId}.csv`);
+    link.setAttribute('download', 'klausurhelper_flashcards.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1189,7 +1195,7 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
   const nextCard = () => {
     setIsFlipped(false);
     setTimeout(() => {
-      setCurrentIndex(prev => Math.min(prev + 1, cards.length - 1));
+      setCurrentIndex(prev => Math.min(prev + 1, flashcards.length - 1));
     }, 150);
   };
 
@@ -1209,7 +1215,7 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
         </p>
       </div>
 
-      {cards.length === 0 ? (
+      {flashcards.length === 0 ? (
         <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm text-center">
           <Layers className="w-16 h-16 text-indigo-400 mx-auto mb-6 opacity-50" />
           <h4 className="text-2xl font-bold text-slate-800 mb-4 tracking-tight">
@@ -1231,12 +1237,12 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
             {isGenerating ? (
               <>
                 <Loader2 className="w-6 h-6 animate-spin" />
-                AI is analyzing documents...
+                KI analysiert Dokumente...
               </>
             ) : (
               <>
                 <Sparkles className="w-6 h-6" />
-                Generate Flashcards
+                Flashcards aus Altklausuren generieren
               </>
             )}
           </button>
@@ -1257,7 +1263,7 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
               <div className="absolute w-full h-full backface-hidden bg-white border-2 border-indigo-100 rounded-3xl p-8 flex flex-col items-center justify-center text-center">
                 <span className="absolute top-6 left-8 text-indigo-400 font-semibold tracking-wider text-sm uppercase">Question</span>
                 <p className="text-2xl font-bold text-slate-800 leading-snug">
-                  {cards[currentIndex].front}
+                  {flashcards[currentIndex].question}
                 </p>
                 <span className="absolute bottom-6 text-slate-400 text-sm animate-pulse">Click to flip</span>
               </div>
@@ -1266,7 +1272,7 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
               <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-3xl p-8 flex flex-col items-center justify-center text-center rotate-y-180">
                  <span className="absolute top-6 left-8 text-indigo-500 font-semibold tracking-wider text-sm uppercase">Answer</span>
                 <p className="text-xl font-medium text-slate-700 leading-relaxed overflow-y-auto w-full px-4 max-h-[80%] custom-scrollbar">
-                  {cards[currentIndex].back}
+                  {flashcards[currentIndex].answer}
                 </p>
               </div>
             </div>
@@ -1279,21 +1285,19 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
                 disabled={currentIndex === 0}
                 className="px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 text-slate-700"
               >
-                <ChevronRight className="w-5 h-5 rotate-180" />
-                Previous
+                ⬅️ Vorherige Karte
               </button>
               
               <div className="font-semibold text-slate-600 tracking-wide">
-                Card {currentIndex + 1} of {cards.length}
+                Karte {currentIndex + 1} von {flashcards.length}
               </div>
 
               <button
                 onClick={nextCard}
-                disabled={currentIndex === cards.length - 1}
+                disabled={currentIndex === flashcards.length - 1}
                 className="px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 text-slate-700"
               >
-                Next
-                <ChevronRight className="w-5 h-5" />
+                Nächste Karte ➡️
               </button>
           </div>
 
@@ -1304,7 +1308,7 @@ function FlashcardsTab({ courseId }: { courseId: number }) {
               className="w-full py-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-sm hover:shadow"
             >
               <Download className="w-6 h-6" />
-              Import into Anki / RemNote (CSV Download)
+              💾 In Anki / RemNote importieren (CSV Download)
             </button>
           </div>
         </div>
