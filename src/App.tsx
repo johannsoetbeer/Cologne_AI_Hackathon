@@ -640,10 +640,33 @@ function GeneratorTab({
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
 
+  const EXAM_WEBHOOK_URL = 'https://abudi42.app.n8n.cloud/webhook-test/3a086711-6ca2-49d0-919a-490dad2276bd';
+
   const handleGenerate = async () => {
+    if (isGenerating) return;
+    
     const combinedPrompt = `Topic Focus: ${focusTopic || 'General'}\nDifficulty: ${difficulty}\nAdditional Notes: ${additionalNotes}`;
 
+    setIsGenerating(true);
+    
     try {
+      // Send data to n8n webhook
+      const webhookPayload = {
+        topic_focus: focusTopic || 'General',
+        file_name: fileName.trim() || `Exam_${Date.now()}`,
+        difficulty_level: difficulty,
+        specifics: additionalNotes,
+        course_id: courseId,
+      };
+
+      // Call webhook in background (non-blocking)
+      fetch(EXAM_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(webhookPayload),
+      }).catch(err => console.error('Webhook error:', err));
+
+      // Continue with local exam generation
       await generateExam(courseId, combinedPrompt, fileName.trim());
       setFocusTopic('');
       setAdditionalNotes('');

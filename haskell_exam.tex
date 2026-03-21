@@ -1,0 +1,393 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[left=2.5cm,right=2.5cm,top=2cm,bottom=2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{extramarks}
+\usepackage{fancyhdr}
+\usepackage[ngerman]{babel}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Programmierung WiSe 2024/2025}
+\fancyhead[R]{Klausur - Haskell Vertiefung}
+\fancyfoot[C]{\thepage}
+
+\makeatletter
+\def\cleardoublepage{\clearpage\if@twoside\ifodd\c@page\else%
+\hbox{}%
+\thispagestyle{empty}%
+\newpage%
+\if@twocolumn\hbox{}\newpage\fi\fi\fi}
+\makeatother
+
+\begin{document}
+
+\begin{center}
+    \textbf{\Large Klausur Programmierung - Haskell Vertiefung}\\
+    \vspace{0.5cm}
+    \textbf{Schwierigkeitsgrad: Schwer}\\
+    \vspace{0.5cm}
+    \textbf{Klausurdatum: März 2025}
+\end{center}
+
+\vspace{1cm}
+
+\noindent
+\textbf{Name:} \underline{\hspace{8cm}}\\
+\textbf{Matrikelnummer:} \underline{\hspace{5cm}}\\
+\textbf{Studiengang:} \underline{\hspace{5cm}}
+
+\vspace{1cm}
+
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Aufgabe} & \textbf{Punkte} & \textbf{Erreicht} \\ \hline
+Aufgabe 1 & 15 & \\ \hline
+Aufgabe 2 & 12 & \\ \hline
+Aufgabe 3 & 18 & \\ \hline
+Aufgabe 4 & 20 & \\ \hline
+Aufgabe 5 & 15 & \\ \hline
+Aufgabe 6 & 20 & \\ \hline
+\textbf{Summe} & \textbf{100} & \\ \hline
+\end{tabular}
+\end{center}
+
+\vspace{1cm}
+
+\noindent
+\textbf{Allgemeine Hinweise:}
+\begin{itemize}
+    \item Schreiben Sie mit dokumentenechten Stiften.
+    \item Geben Sie für jede Aufgabe maximal eine Lösung an.
+    \item Bei Täuschungsversuchen wird die Klausur mit 0 Punkten bewertet.
+    \item Alle Hilfsmittel sind zugelassen.
+\end{itemize}
+
+\cleardoublepage
+
+\section*{Aufgabe 1 (Typinferenz und Typklassen): (15 Punkte)}
+
+Gegeben sei folgende Haskell-Programme:
+
+\begin{verbatim}
+class Monad m where
+    (>>=) :: m a -> (a -> m b) -> m b
+    return :: a -> m a
+
+instance Monad Maybe where
+    return = Just
+    Nothing >>= _ = Nothing
+    Just x >>= f = f x
+
+instance Monad [] where
+    return x = [x]
+    xs >>= f = concat (map f xs)
+\end{verbatim}
+
+\begin{enumerate}
+    \item \textbf{(8 Punkte)} Bestimmen Sie den allgemeinsten Typ für jede der folgenden Funktionen und begründen Sie Ihre Antwort:
+    
+    \begin{verbatim}
+    f1 :: ?
+    f1 x y = if x then [y] else []
+
+    f2 :: ?
+    f2 x = map ($ x)
+
+    f3 :: ?
+    f3 = do
+        a <- [1,2,3]
+        b <- [4,5]
+        return (a,b)
+
+    f4 :: ?
+    f4 [] = Nothing
+    f4 (x:xs) = Just (x, xs)
+    \end{verbatim}
+
+    \item \textbf{(7 Punkte)} Gegeben sei folgende Typdeklaration:
+    \begin{verbatim}
+    class Functor f => Applicative f where
+        pure :: a -> f a
+        (<*>) :: f (a -> b) -> f a -> f b
+    \end{verbatim}
+    
+    Zeigen Sie, dass \texttt{Maybe} eine Instanz von \texttt{Applicative} ist, indem Sie \texttt{pure} und \texttt{<*>} für \texttt{Maybe} implementieren. Beweisen Sie anschließend, dass die \texttt{Applicative}-Gesetze erfüllt sind:
+    \begin{enumerate}
+        \item \texttt{pure id <*> v = v}
+        \item \texttt{pure (.) <*> u <*> v <*> w = u <*> (v <*> w)}
+        \item \texttt{pure f <*> pure x = pure (f x)}
+        \item \texttt{u <*> pure y = pure (\$ y) <*> u}
+    \end{enumerate}
+\end{enumerate}
+
+\cleardoublepage
+
+\section*{Aufgabe 2 (Monaden und Monaden-Transformers): (12 Punkte)}
+
+Gegeben sei folgende Datenstruktur für eine einfache Zustandsmonade:
+
+\begin{verbatim}
+newtype State s a = State { runState :: s -> (a, s) }
+
+instance Functor (State s) where
+    fmap f (State g) = State $ \s -> let (a, s') = g s in (f a, s')
+
+instance Applicative (State s) where
+    pure a = State $ \s -> (a, s)
+    State f <*> State g = State $ \s ->
+        let (h, s') = f s
+            (a, s'') = g s'
+        in (h a, s'')
+
+instance Monad (State s) where
+    State f >>= g = State $ \s ->
+        let (a, s') = f s
+            State h = g a
+        in h s'
+\end{verbatim}
+
+\begin{enumerate}
+    \item \textbf{(4 Punkte)} Implementieren Sie die folgenden Hilfsfunktionen:
+    \begin{verbatim}
+    get :: State s s
+    put :: s -> State s ()
+    modify :: (s -> s) -> State s ()
+    \end{verbatim}
+    
+    \item \textbf{(8 Punkte)} Implementieren Sie einen \texttt{State}-Transformer namens \texttt{StateT}, der zusätzlich zu einem Zustand auch einen Fehlerwert verarbeiten kann:
+    \begin{verbatim}
+    newtype StateT s m a = StateT { runStateT :: s -> m (a, s) }
+    \end{verbatim}
+    
+    Implementieren Sie die \texttt{Monad}-Instanz für \texttt{StateT s m}, wobei \texttt{m} eine Monad sein soll. Gehen Sie dabei wie folgt vor:
+    \begin{enumerate}
+        \item Definieren Sie die \texttt{Functor}-Instanz
+        \item Definieren Sie die \texttt{Applicative}-Instanz
+        \item Definieren Sie die \texttt{Monad}-Instanz unter Verwendung von \texttt{MonadTrans}:
+        \begin{verbatim}
+        class MonadTrans t where
+            lift :: Monad m => m a -> t m a
+        \end{verbatim}
+    \end{enumerate}
+\end{enumerate}
+
+\cleardoublepage
+
+\section*{Aufgabe 3 (Parser-Kombinatoren): (18 Punkte)}
+
+In dieser Aufgabe entwickeln wir einen einfachen Parser-Kombinator. Ein Parser ist ein Programm, das eine Eingabe (einen String) analysiert und ein Ergebnis zurückgibt.
+
+\begin{verbatim}
+newtype Parser a = Parser { runParser :: String -> Maybe (a, String) }
+
+instance Functor Parser where
+    fmap f (Parser p) = Parser $ \input ->
+        case p input of
+            Nothing -> Nothing
+            Just (a, rest) -> Just (f a, rest)
+
+instance Applicative Parser where
+    pure a = Parser $ \input -> Just (a, input)
+    Parser pf <*> Parser px = Parser $ \input ->
+        case pf input of
+            Nothing -> Nothing
+            Just (f, rest) ->
+                case px rest of
+                    Nothing -> Nothing
+                    Just (x, rest') -> Just (f x, rest')
+
+instance Monad Parser where
+    Parser p >>= f = Parser $ \input ->
+        case p input of
+            Nothing -> Nothing
+            Just (a, rest) -> runParser (f a) rest
+\end{verbatim}
+
+\begin{enumerate}
+    \item \textbf{(5 Punkte)} Implementieren Sie folgende primitive Parser:
+    \begin{verbatim}
+    satisfy :: (Char -> Bool) -> Parser Char
+    char :: Char -> Parser Char
+    anyChar :: Parser Char
+    \end{verbatim}
+    
+    \item \textbf{(5 Punkte)} Implementieren Sie folgende Kombinations-Parser:
+    \begin{verbatim}
+    -- Parsen von null oder mehr Vorkommen
+    many :: Parser a -> Parser [a]
+    
+    -- Parsen von einem oder mehr Vorkommen
+    many1 :: Parser a -> Parser [a]
+    
+    -- Alternative: erster erfolgreicher Parser
+    (<|>) :: Parser a -> Parser a -> Parser a
+    \end{verbatim}
+    
+    \item \textbf{(8 Punkte)} Implementieren Sie einen Parser für arithmetische Ausdrücke mit folgenden Regeln:
+    \begin{itemize}
+        \item \texttt{expr := term (('+' | '-') term)*}
+        \item \texttt{term := factor (('*' | '/') factor)*}
+        \item \texttt{factor := number | '(' expr ')'}
+        \item \texttt{number := [0-9]+}
+    \end{itemize}
+    
+    Der Parser soll eine Zahl als \texttt{Int} parsen. Implementieren Sie:
+    \begin{verbatim}
+    expr :: Parser Int
+    term :: Parser Int
+    factor :: Parser Int
+    number :: Parser Int
+    \end{verbatim}
+    
+    \textit{Hinweis:} Sie können \texttt{read} verwenden.
+\end{enumerate}
+
+\cleardoublepage
+
+\section*{Aufgabe 4 (Laziness und unendliche Datenstrukturen): (20 Punkte)}
+
+\begin{enumerate}
+    \item \textbf{(6 Punkte)} Erklären Sie den Unterschied zwischen \emph{strikter} und \emph{nicht-strikter} Auswertung in Haskell. Geben Sie jeweils ein Beispiel, wo der Unterschied beobachtbar ist.
+    
+    \item \textbf{(7 Punkte)} Implementieren Sie die folgenden Funktionen unter Ausnutzung der laziness von Haskell:
+    \begin{verbatim}
+    -- Fibonacci-Zahlen als unendliche Liste
+    fibs :: [Integer]
+    
+    -- Alle Primzahlen (Sieb des Eratosthenes)
+    primes :: [Integer]
+    
+    -- Binomialkoeffizienten als Dreieck
+    binom :: [[Integer]]
+    \end{verbatim}
+    
+    \item \textbf{(7 Punkte)} Gegeben sei folgende Funktion:
+    \begin{verbatim}
+    data Stream a = Cons a (Stream a)
+    
+    headS :: Stream a -> a
+    headS (Cons x _) = x
+    
+    tailS :: Stream a -> Stream a
+    tailS (Cons _ xs) = xs
+    
+    takeS :: Int -> Stream a -> [a]
+    takeS 0 _ = []
+    takeS n (Cons x xs) = x : takeS (n-1) xs
+    \end{verbatim}
+    
+    Implementieren Sie:
+    \begin{verbatim}
+    -- Euklidischer Algorithmus als Stream
+    euclid :: Integer -> Integer -> Stream Integer
+    
+    -- Alle Teiler einer Zahl
+    divisors :: Integer -> [Integer]
+    
+    -- Collatz-Funktion
+    collatz :: Integer -> Integer
+    collatz n
+        | n == 1    = 1
+        | even n    = n `div` 2
+        | otherwise = 3 * n + 1
+    
+    -- Collatz-Sequenz ab n
+    collatzSeq :: Integer -> [Integer]
+    \end{verbatim}
+\end{enumerate}
+
+\cleardoublepage
+
+\section*{Aufgabe 5 (Rekursion und funktionale Datenstrukturen): (15 Punkte)}
+
+\begin{enumerate}
+    \item \textbf{(8 Punkte)} Implementieren Sie einen binären Suchbaum in Haskell:
+    \begin{verbatim}
+    data Tree a = Empty
+                | Node a (Tree a) (Tree a)
+        deriving (Show, Eq)
+    
+    -- Einfügen eines Elements
+    insert :: Ord a => a -> Tree a -> Tree a
+    
+    -- Suchen eines Elements
+    contains :: Ord a => a -> Tree a -> Bool
+    
+    -- Bauminversion (Spiegelung)
+    mirror :: Tree a -> Tree a
+    
+    -- Traversierungen
+    inOrder :: Tree a -> [a]
+    preOrder :: Tree a -> [a]
+    postOrder :: Tree a -> [a]
+    levelOrder :: Tree a -> [a]
+    \end{verbatim}
+    
+    \item \textbf{(7 Punkte)} Implementieren Sie eine Rot-Schwarz-Baum-Datenstruktur mit den folgenden Operationen:
+    \begin{verbatim}
+    data Color = R | B
+    
+    data RBTree a = Empty
+                  | Node Color a (RBTree a) (RBTree a)
+    
+    -- Balance-Transformationen
+    balance :: RBTree a -> RBTree a
+    
+    -- Einfügen mit automatischer Balance
+    insertRB :: Ord a => a -> RBTree a -> RBTree a
+    \end{verbatim}
+    
+    Erklären Sie, welche der RB-Baum-Eigenschaften durch Ihre \texttt{balance}-Funktion erhalten bleiben.
+\end{enumerate}
+
+\cleardoublepage
+
+\section*{Aufgabe 6 (Fortgeschrittene Konzepte): (20 Punkte)}
+
+\begin{enumerate}
+    \item \textbf{(6 Punkte)} Erklären Sie das Konzept der \emph{Monade} in Haskell. Was ist der Unterschied zwischen \texttt{Monad} und \texttt{MonadPlus}? Wann würde man \texttt{MonadPlus} verwenden?
+    
+    \item \textbf{(7 Punkte)} Gegeben sei folgende Monade-Definition:
+    \begin{verbatim}
+    newtype Writer w a = Writer { runWriter :: (a, w) }
+    
+    instance Monoid w => Monad (Writer w) where
+        return a = Writer (a, mempty)
+        Writer (a, w) >>= f = let Writer (b, w') = f a
+                               in Writer (b, w `mappend` w')
+    \end{verbatim}
+    
+    Implementieren Sie:
+    \begin{verbatim}
+    tell :: w -> Writer w ()
+    listen :: Writer w a -> Writer w (a, w)
+    pass :: Writer w (a, w -> w) -> Writer w a
+    \end{verbatim}
+    
+    \item \textbf{(7 Punkte)} Implementieren Sie einen Parser, der sowohl Fehlermeldungen als auch Logs führen kann, unter Verwendung von \texttt{StateT} und einem geeigneten Error-Typ:
+    \begin{verbatim}
+    type ParseError = String
+    
+    type ParserM a = StateT String (WriterT [String] (Either ParseError)) a
+    
+    -- Führt den Parser aus
+    runParserM :: ParserM a -> String -> Either ParseError (a, String, [String])
+    
+    -- Primitive Parser
+    parserFail :: ParseError -> ParserM a
+    parserGet :: ParserM Char
+    parserPut :: String -> ParserM ()
+    \end{verbatim}
+\end{enumerate}
+
+\vfill
+
+\begin{center}
+\textbf{--- Ende der Klausur ---}
+\end{center}
+
+\end{document}
