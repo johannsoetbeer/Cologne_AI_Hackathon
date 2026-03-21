@@ -13,8 +13,8 @@ export type KnowledgeEntry = {
   id: number;
   course_id: number;
   file_name: string;
-  status: string;
   created_at: string;
+  url: string;
 };
 
 export type GeneratedExam = {
@@ -24,6 +24,7 @@ export type GeneratedExam = {
   pdf_url: string | null;
   status: string;
   created_at: string;
+  code: string;
 };
 
 export type FeedbackResult = {
@@ -61,6 +62,14 @@ export async function createCourse(name: string): Promise<Course> {
   return res.json();
 }
 
+export async function deleteCourse(id: number): Promise<{ message: string }> {
+  const res = await fetch(`${API_BASE}/courses/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Fehler beim Löschen des Fachs');
+  return res.json();
+}
+
 // ==========================================
 // Knowledge
 // ==========================================
@@ -85,6 +94,14 @@ export async function uploadKnowledge(courseId: number, file: File): Promise<{ m
   return res.json();
 }
 
+export async function deleteKnowledge(courseId: number, id: number): Promise<{ message: string }> {
+  const res = await fetch(`${API_BASE}/courses/${courseId}/knowledge/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Fehler beim Löschen des Dokuments');
+  return res.json();
+}
+
 // ==========================================
 // Generated Exams
 // ==========================================
@@ -94,11 +111,11 @@ export async function fetchExams(courseId: number): Promise<GeneratedExam[]> {
   return res.json();
 }
 
-export async function generateExam(courseId: number, prompt: string, courseName: string): Promise<{ message: string; exams: GeneratedExam[] }> {
+export async function generateExam(courseId: number, prompt: string): Promise<{ message: string; exams: GeneratedExam[] }> {
   const res = await fetch(`${API_BASE}/courses/${courseId}/exams/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, course_name: courseName }),
+    body: JSON.stringify({ prompt }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Generierung fehlgeschlagen' }));
@@ -110,10 +127,11 @@ export async function generateExam(courseId: number, prompt: string, courseName:
 // ==========================================
 // Feedback
 // ==========================================
-export async function submitFeedback(courseId: number, examId: number, file: File): Promise<{ message: string; feedback: FeedbackResult }> {
+export async function submitFeedback(courseId: number, examId: number, file: File, originalLatex: string): Promise<{ message: string; feedback: FeedbackResult }> {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('exam_id', examId.toString());
+  formData.append('original_latex', originalLatex);
 
   const res = await fetch(`${API_BASE}/courses/${courseId}/feedback`, {
     method: 'POST',

@@ -14,8 +14,8 @@ import {
   Library,
   FileBadge,
   AlertCircle,
-  Clock,
   Sparkles,
+  Trash2,
 } from 'lucide-react';
 import {
   fetchCourses,
@@ -25,6 +25,8 @@ import {
   fetchExams,
   generateExam,
   submitFeedback,
+  deleteCourse,
+  deleteKnowledge,
   type Course,
   type KnowledgeEntry,
   type GeneratedExam,
@@ -40,6 +42,7 @@ export default function App() {
   const [isAddingSubject, setIsAddingSubject] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState('');
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+  const [isDeletingCourseId, setIsDeletingCourseId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Data per active subject
@@ -112,6 +115,23 @@ export default function App() {
     }
   };
 
+  const handleDeleteSubject = async (id: number, name: string) => {
+    if (!window.confirm(`Möchtest du das Fach "${name}" wirklich löschen?`)) return;
+    setIsDeletingCourseId(id);
+    try {
+      await deleteCourse(id);
+      setCourses((prev) => prev.filter((c) => c.id !== id));
+      if (activeSubjectId === id) {
+        setActiveSubjectId(null);
+      }
+    } catch (err) {
+      console.error('Error deleting course:', err);
+      setError('Fach konnte nicht gelöscht werden');
+    } finally {
+      setIsDeletingCourseId(null);
+    }
+  };
+
   const refreshKnowledge = async () => {
     if (!activeSubjectId) return;
     try {
@@ -161,25 +181,40 @@ export default function App() {
             </p>
           ) : (
             courses.map((subject) => (
-              <button
-                key={subject.id}
-                onClick={() => handleSelectSubject(subject.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-left ${
-                  activeSubjectId === subject.id
-                    ? 'bg-indigo-50 text-indigo-700 font-medium shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
-              >
-                <Folder
-                  className={`w-5 h-5 shrink-0 ${
-                    activeSubjectId === subject.id ? 'text-indigo-600' : 'text-slate-400'
+              <div key={subject.id} className="relative group w-full flex items-center">
+                <button
+                  onClick={() => handleSelectSubject(subject.id)}
+                  className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-left ${
+                    activeSubjectId === subject.id
+                      ? 'bg-indigo-50 text-indigo-700 font-medium shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 group-hover:pr-10'
                   }`}
-                />
-                <span className="truncate">{subject.name}</span>
-                {activeSubjectId === subject.id && (
-                  <ChevronRight className="w-4 h-4 ml-auto text-indigo-400" />
-                )}
-              </button>
+                >
+                  <Folder
+                    className={`w-5 h-5 shrink-0 ${
+                      activeSubjectId === subject.id ? 'text-indigo-600' : 'text-slate-400'
+                    }`}
+                  />
+                  <span className="truncate">{subject.name}</span>
+                  {activeSubjectId === subject.id && (
+                    <ChevronRight className="w-4 h-4 ml-auto text-indigo-400" />
+                  )}
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDeleteSubject(subject.id, subject.name); }}
+                  disabled={isDeletingCourseId === subject.id}
+                  className={`absolute right-2 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all ${
+                    activeSubjectId === subject.id ? 'opacity-100 flex' : 'opacity-0 group-hover:opacity-100 hidden group-hover:flex'
+                  }`}
+                  title="Fach löschen"
+                >
+                  {isDeletingCourseId === subject.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             ))
           )}
         </div>
@@ -312,7 +347,6 @@ export default function App() {
                 {activeTab === 'generator' && (
                   <GeneratorTab
                     courseId={activeSubject.id}
-                    courseName={activeSubject.name}
                     exams={exams}
                     onRefresh={refreshExams}
                   />
@@ -376,22 +410,51 @@ function DatabaseTab({
 }) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
+  const [optimisticDocs, setOptimisticDocs] = useState<{name: string, date: number}[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const handleUpload = async (file: File) => {
     setIsUploading(true);
     setUploadStatus('KI analysiert Dokument...');
+    setOptimisticDocs(prev => [...prev, { name: file.name, date: Date.now() }]);
 
     try {
       await uploadKnowledge(courseId, file);
-      setUploadStatus('Erfolgreich verarbeitet!');
+      setUploadStatus('Erfolgreich an KI gesendet!');
+      // Refresh multiple times to catch n8n processing updates automatically
       onRefresh();
+      setTimeout(onRefresh, 2000);
+      setTimeout(onRefresh, 5000);
+      setTimeout(onRefresh, 10000);
       setTimeout(() => setUploadStatus(null), 3000);
     } catch (err) {
       setUploadStatus('Fehler: ' + (err instanceof Error ? err.message : 'Upload fehlgeschlagen'));
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleViewKnowledge = (url: string | undefined) => {
+    if (!url) {
+      alert('Keine URL für dieses Dokument in der Datenbank (Cloudinary) gefunden.');
+      return;
+    }
+    
+    window.open(url, '_blank');
+  };
+
+  const handleDelete = async (id: number, fileName: string) => {
+    if (!window.confirm(`Möchtest du das Dokument "${fileName}" wirklich löschen?`)) return;
+    setIsDeletingId(id);
+    try {
+      await deleteKnowledge(courseId, id);
+      onRefresh();
+    } catch (err) {
+      alert('Fehler beim Löschen des Dokuments');
+    } finally {
+      setIsDeletingId(null);
     }
   };
 
@@ -415,31 +478,21 @@ function DatabaseTab({
 
   const handleDragLeave = () => setIsDragging(false);
 
-  const getStatusBadge = (status: string) => {
-    const s = status?.toLowerCase() || '';
-    if (s === 'processed' || s === 'verarbeitet') {
-      return (
-        <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">
-          <CheckCircle className="w-3.5 h-3.5" />
-          Verarbeitet
-        </div>
-      );
-    }
-    if (s === 'processing' || s === 'wird verarbeitet') {
-      return (
-        <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          Wird verarbeitet
-        </div>
-      );
-    }
-    return (
-      <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-semibold">
-        <Clock className="w-3.5 h-3.5" />
-        {status || 'Unbekannt'}
-      </div>
-    );
-  };
+  const renderProcessedBadge = () => (
+    <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">
+      <CheckCircle className="w-3.5 h-3.5" />
+      Verarbeitet
+    </div>
+  );
+
+  const renderProcessingBadge = () => (
+    <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold">
+      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+      Wird verarbeitet
+    </div>
+  );
+
+  const pendingDocs = optimisticDocs.filter(opt => !knowledge.some(k => k.file_name === opt.name));
 
   return (
     <div className="space-y-8">
@@ -504,7 +557,7 @@ function DatabaseTab({
           )}
         </h4>
 
-        {knowledge.length === 0 ? (
+        {knowledge.length === 0 && pendingDocs.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-400 shadow-sm">
             <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
             <p>Noch keine Dateien hochgeladen.</p>
@@ -512,15 +565,48 @@ function DatabaseTab({
         ) : (
           <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
             <ul className="divide-y divide-slate-100">
+              {pendingDocs.map((opt) => (
+                <li key={opt.date} className="p-4 flex items-center justify-between bg-slate-50/50">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-100 rounded-lg">
+                      <FileText className="w-5 h-5 text-slate-400" />
+                    </div>
+                    <span className="font-medium text-slate-500">{opt.name}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {renderProcessingBadge()}
+                  </div>
+                </li>
+              ))}
               {knowledge.map((entry) => (
                 <li key={entry.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-rose-50 rounded-lg">
                       <FileText className="w-5 h-5 text-rose-500" />
                     </div>
-                    <span className="font-medium text-slate-700">{entry.file_name}</span>
+                    <button
+                      onClick={() => handleViewKnowledge(entry.url)}
+                      className="font-medium text-indigo-600 hover:text-indigo-800 hover:underline text-left transition-colors"
+                      title="Klicken, um das PDF zu öffnen"
+                    >
+                      {entry.file_name || 'Unbekanntes Dokument'}
+                    </button>
                   </div>
-                  {getStatusBadge(entry.status)}
+                  <div className="flex items-center gap-3">
+                    {renderProcessedBadge()}
+                    <button
+                      onClick={() => handleDelete(entry.id, entry.file_name)}
+                      disabled={isDeletingId === entry.id}
+                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Dokument löschen"
+                    >
+                      {isDeletingId === entry.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -536,12 +622,10 @@ function DatabaseTab({
 // ==========================================
 function GeneratorTab({
   courseId,
-  courseName,
   exams,
   onRefresh,
 }: {
   courseId: number;
-  courseName: string;
   exams: GeneratedExam[];
   onRefresh: () => void;
 }) {
@@ -555,7 +639,7 @@ function GeneratorTab({
     setGenError(null);
 
     try {
-      await generateExam(courseId, topic.trim(), courseName);
+      await generateExam(courseId, topic.trim());
       setTopic('');
       onRefresh();
     } catch (err) {
@@ -563,6 +647,22 @@ function GeneratorTab({
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const compileLatex = (latex: string) => {
+    if (!latex) return;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'https://latexonline.cc/compile';
+    form.target = '_blank';
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'text';
+    input.value = latex;
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
   };
 
   const getExamStatusBadge = (status: string) => {
@@ -646,27 +746,26 @@ function GeneratorTab({
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-slate-700 truncate">{exam.prompt}</p>
                   <p className="text-xs text-slate-400 mt-1">
-                    {new Date(exam.created_at).toLocaleDateString('de-DE', {
+                    {exam.created_at ? new Date(exam.created_at).toLocaleDateString('de-DE', {
                       day: '2-digit',
                       month: '2-digit',
                       year: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit',
-                    })}
+                    }) : 'Unbekanntes Datum'}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   {getExamStatusBadge(exam.status)}
-                  {exam.pdf_url && (
-                    <a
-                      href={exam.pdf_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 hover:text-indigo-600 hover:border-indigo-300 hover:shadow-md transition-all flex items-center gap-2 text-sm"
+                  {exam.code && (
+                    <button
+                      onClick={() => compileLatex(exam.code)}
+                      className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 hover:text-indigo-600 hover:border-indigo-300 hover:shadow-md transition-all flex items-center gap-2 text-sm text-left truncate max-w-[200px]"
+                      title="Als PDF kompilieren"
                     >
                       <Download className="w-4 h-4" />
-                      PDF
-                    </a>
+                      Klausur_{exam.id}_{exam.created_at ? new Date(exam.created_at).toLocaleDateString('de-DE') : 'Unbekannt'}.pdf
+                    </button>
                   )}
                 </div>
               </div>
@@ -702,12 +801,19 @@ function FeedbackTab({
 
   const handleSubmit = async () => {
     if (!selectedExamId || !file) return;
+    
+    const selectedExam = exams.find(e => e.id === selectedExamId);
+    if (!selectedExam?.code) {
+      setFbError('Kein gültiger Klausur-Code (LaTeX) für dieses Fach gefunden.');
+      return;
+    }
+
     setIsUploading(true);
     setFbError(null);
     setFeedbackResult(null);
 
     try {
-      const result = await submitFeedback(courseId, selectedExamId, file);
+      const result = await submitFeedback(courseId, selectedExamId, file, selectedExam.code);
       setFeedbackResult(result.feedback);
     } catch (err) {
       setFbError(err instanceof Error ? err.message : 'Feedback konnte nicht geladen werden');
@@ -745,7 +851,7 @@ function FeedbackTab({
               <option value="">Klausur auswählen...</option>
               {exams.map((exam) => (
                 <option key={exam.id} value={exam.id}>
-                  {exam.prompt.substring(0, 60)}{exam.prompt.length > 60 ? '...' : ''} — {new Date(exam.created_at).toLocaleDateString('de-DE')}
+                  {(exam.prompt || 'Ohne Titel').substring(0, 60)}{(exam.prompt || 'Ohne Titel').length > 60 ? '...' : ''} — {exam.created_at ? new Date(exam.created_at).toLocaleDateString('de-DE') : 'Unbekanntes Datum'}
                 </option>
               ))}
             </select>
