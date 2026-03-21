@@ -1038,7 +1038,7 @@ function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult | any
       <div className="bg-slate-50 p-6 rounded-2xl text-sm font-mono text-slate-600 overflow-auto max-h-[500px] border border-slate-200">
         <div className="flex items-center gap-2 mb-4 text-amber-600 font-semibold font-sans">
           <AlertCircle className="w-5 h-5" />
-          <span>Das Format der Korrektur konnte nicht als detaillierte Auswertung gelesen werden.</span>
+          <span>The feedback format could not be parsed as a detailed evaluation.</span>
         </div>
         <pre>{JSON.stringify(feedbackResult, null, 2)}</pre>
       </div>
@@ -1051,20 +1051,20 @@ function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult | any
   const percentage = totalMax > 0 ? Math.round((totalAchieved / totalMax) * 100) : 0;
 
   // Determine Grade based on standard university thresholds
-  let grade = 'Nicht bestanden';
+  let grade = 'Not passed';
   let gradeBg = 'bg-red-50 border-red-200';
   let gradeText = 'text-red-700';
 
-  if (percentage >= 95) { grade = '1.0 (Sehr gut)'; gradeBg = 'bg-emerald-50 border-emerald-200'; gradeText = 'text-emerald-700'; }
-  else if (percentage >= 90) { grade = '1.3 (Sehr gut)'; gradeBg = 'bg-emerald-50 border-emerald-200'; gradeText = 'text-emerald-700'; }
-  else if (percentage >= 85) { grade = '1.7 (Gut)'; gradeBg = 'bg-green-50 border-green-200'; gradeText = 'text-green-700'; }
-  else if (percentage >= 80) { grade = '2.0 (Gut)'; gradeBg = 'bg-green-50 border-green-200'; gradeText = 'text-green-700'; }
-  else if (percentage >= 75) { grade = '2.3 (Gut)'; gradeBg = 'bg-green-50 border-green-200'; gradeText = 'text-green-700'; }
-  else if (percentage >= 70) { grade = '2.7 (Befriedigend)'; gradeBg = 'bg-blue-50 border-blue-200'; gradeText = 'text-blue-700'; }
-  else if (percentage >= 65) { grade = '3.0 (Befriedigend)'; gradeBg = 'bg-blue-50 border-blue-200'; gradeText = 'text-blue-700'; }
-  else if (percentage >= 60) { grade = '3.3 (Befriedigend)'; gradeBg = 'bg-blue-50 border-blue-200'; gradeText = 'text-blue-700'; }
-  else if (percentage >= 55) { grade = '3.7 (Ausreichend)'; gradeBg = 'bg-amber-50 border-amber-200'; gradeText = 'text-amber-700'; }
-  else if (percentage >= 50) { grade = '4.0 (Ausreichend)'; gradeBg = 'bg-amber-50 border-amber-200'; gradeText = 'text-amber-700'; }
+  if (percentage >= 95) { grade = '1.0 (Excellent)'; gradeBg = 'bg-emerald-50 border-emerald-200'; gradeText = 'text-emerald-700'; }
+  else if (percentage >= 90) { grade = '1.3 (Excellent)'; gradeBg = 'bg-emerald-50 border-emerald-200'; gradeText = 'text-emerald-700'; }
+  else if (percentage >= 85) { grade = '1.7 (Good)'; gradeBg = 'bg-green-50 border-green-200'; gradeText = 'text-green-700'; }
+  else if (percentage >= 80) { grade = '2.0 (Good)'; gradeBg = 'bg-green-50 border-green-200'; gradeText = 'text-green-700'; }
+  else if (percentage >= 75) { grade = '2.3 (Good)'; gradeBg = 'bg-green-50 border-green-200'; gradeText = 'text-green-700'; }
+  else if (percentage >= 70) { grade = '2.7 (Satisfactory)'; gradeBg = 'bg-blue-50 border-blue-200'; gradeText = 'text-blue-700'; }
+  else if (percentage >= 65) { grade = '3.0 (Satisfactory)'; gradeBg = 'bg-blue-50 border-blue-200'; gradeText = 'text-blue-700'; }
+  else if (percentage >= 60) { grade = '3.3 (Satisfactory)'; gradeBg = 'bg-blue-50 border-blue-200'; gradeText = 'text-blue-700'; }
+  else if (percentage >= 55) { grade = '3.7 (Sufficient)'; gradeBg = 'bg-amber-50 border-amber-200'; gradeText = 'text-amber-700'; }
+  else if (percentage >= 50) { grade = '4.0 (Sufficient)'; gradeBg = 'bg-amber-50 border-amber-200'; gradeText = 'text-amber-700'; }
 
 
   return (
@@ -1078,13 +1078,13 @@ function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult | any
 
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
-              <h4 className="text-xl font-bold mb-1 opacity-80 text-slate-800">Gesamtergebnis</h4>
+              <h4 className="text-xl font-bold mb-1 opacity-80 text-slate-800">Total Score</h4>
               <div className="flex items-baseline gap-3">
                 <span className={`text-5xl font-extrabold tracking-tight ${gradeText}`}>{percentage}%</span>
-                <span className={`text-xl font-medium ${gradeText} opacity-80`}>({totalAchieved} / {totalMax} Pkt)</span>
+                <span className={`text-xl font-medium ${gradeText} opacity-80`}>({totalAchieved} / {totalMax} Pts)</span>
               </div>
               <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white/60 backdrop-blur-sm rounded-xl font-bold ${gradeText} shadow-sm border border-white/50`}>
-                {percentage >= 50 ? '🎉 Bestanden' : '💔 Durchgefallen'} - {grade}
+                {percentage >= 50 ? '🎉 Passed' : '💔 Failed'} - {grade}
               </div>
             </div>
 
@@ -1111,23 +1111,23 @@ function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult | any
         <div className="col-span-1 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div>
             <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-indigo-500" /> Auswertung
+              <Sparkles className="w-5 h-5 text-indigo-500" /> Evaluation Metrics
             </h4>
             <div className="space-y-4">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500">Bearbeitete Aufgaben</span>
+                <span className="text-slate-500">Attempted Tasks</span>
                 <span className="font-bold text-slate-700">{results.length}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500">Volle Punktzahl</span>
+                <span className="text-slate-500">Full Score</span>
                 <span className="font-bold text-emerald-600">{results.filter((r: any) => r.achieved_points === r.max_points).length}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500">Teilpunkte</span>
+                <span className="text-slate-500">Partial Score</span>
                 <span className="font-bold text-amber-600">{results.filter((r: any) => r.achieved_points > 0 && r.achieved_points < r.max_points).length}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500">Keine Punkte</span>
+                <span className="text-slate-500">Zero Score</span>
                 <span className="font-bold text-red-600">{results.filter((r: any) => r.achieved_points === 0).length}</span>
               </div>
             </div>
@@ -1137,7 +1137,7 @@ function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult | any
   
     {/* Detailed Tasks Breakdown */ }
     <div className="space-y-6">
-      <h3 className="text-xl font-bold text-slate-800 px-2">Aufgaben-Details</h3>
+      <h3 className="text-xl font-bold text-slate-800 px-2">Task Details</h3>
       {results.map((res: any, i: number) => {
       const taskPercent = res.max_points > 0 ? (res.achieved_points / res.max_points) * 100 : 0;
       const isFull = res.achieved_points === res.max_points;
@@ -1150,7 +1150,7 @@ function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult | any
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <span className={`px-3 py-1 rounded-lg text-sm font-bold ${isFull ? 'bg-emerald-100 text-emerald-700' : isZero ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                  Aufgabe {res.label}
+                  Task {res.label}
                 </span>
                 <div className="h-2 flex-1 max-w-[200px] bg-slate-100 rounded-full overflow-hidden">
                   <div
@@ -1166,7 +1166,7 @@ function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult | any
               <span className={`text-2xl font-black ${isFull ? 'text-emerald-600' : isZero ? 'text-red-500' : 'text-amber-600'}`}>
                 {res.achieved_points} / {res.max_points}
               </span>
-              <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">Punkte</span>
+              <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">Points</span>
             </div>
           </div>
 
@@ -1181,7 +1181,7 @@ function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult | any
               {res.feedback.correct_solution?.explanation && (
                 <div>
                   <h6 className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4" /> Musterlösung
+                    <CheckCircle className="w-4 h-4" /> Correct Solution
                   </h6>
                   <p className="text-slate-600 italic leading-relaxed pl-4 border-l-4 border-indigo-200">
                     {res.feedback.correct_solution.explanation}
@@ -1195,7 +1195,7 @@ function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult | any
               {res.feedback.what_was_good?.length > 0 && (
                 <div className="bg-emerald-50/50 border border-emerald-100 p-5 rounded-2xl">
                   <h6 className="text-sm font-bold text-emerald-700 flex items-center gap-2 mb-3">
-                    <CheckCircle className="w-4 h-4" /> Was lief gut
+                    <CheckCircle className="w-4 h-4" /> What went well
                   </h6>
                   <ul className="text-sm text-slate-700 space-y-2">
                     {res.feedback.what_was_good.map((item: string, idx: number) => (
@@ -1211,7 +1211,7 @@ function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult | any
               {res.feedback.what_to_improve?.length > 0 && (
                 <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
                   <h6 className="text-sm font-bold text-amber-700 flex items-center gap-2 mb-3">
-                    <AlertCircle className="w-4 h-4" /> Verbesserungspotenzial
+                    <AlertCircle className="w-4 h-4" /> Areas for improvement
                   </h6>
                   <ul className="text-sm text-slate-700 space-y-2">
                     {res.feedback.what_to_improve.map((item: string, idx: number) => (
@@ -1254,15 +1254,11 @@ function FlashcardsTab({
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
-  const [flashcards, setFlashcards] = useState<{ question: string, answer: string }[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
   const [csvContent, setCsvContent] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
     setGenError(null);
-    setFlashcards([]);
     setCsvContent(null);
 
     try {
@@ -1274,27 +1270,12 @@ function FlashcardsTab({
         body: JSON.stringify({ course_id: courseId }),
       });
 
-
       if (!response.ok) {
-        throw new Error('Fehler beim Abrufen der Flashcards');
+        throw new Error('Error fetching flashcards');
       }
 
       const csvText = await response.text();
       setCsvContent(csvText);
-
-      const lines = csvText.split('\n');
-      const parsedCards = lines
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .map(line => {
-          const parts = line.split(';');
-          return { question: parts[0] || '', answer: parts.slice(1).join(';') || '' };
-        })
-        .filter(card => card.question && card.answer);
-
-      setFlashcards(parsedCards);
-      setCurrentIndex(0);
-      setIsFlipped(false);
     } catch (err) {
       setGenError(err instanceof Error ? err.message : 'Generation failed');
     } finally {
@@ -1308,43 +1289,29 @@ function FlashcardsTab({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'klausurhelper_flashcards.csv');
+    link.setAttribute('download', 'flashcards.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const nextCard = () => {
-    setIsFlipped(false);
-    setTimeout(() => {
-      setCurrentIndex(prev => Math.min(prev + 1, flashcards.length - 1));
-    }, 150);
-  };
-
-  const prevCard = () => {
-    setIsFlipped(false);
-    setTimeout(() => {
-      setCurrentIndex(prev => Math.max(prev - 1, 0));
-    }, 150);
-  };
-
   return (
     <div className="space-y-8 text-left max-w-2xl mx-auto w-full">
       <div>
-        <h3 className="text-xl font-bold text-slate-800 mb-2">Flashcards Trainer</h3>
+        <h3 className="text-xl font-bold text-slate-800 mb-2">Flashcard Generator</h3>
         <p className="text-slate-500">
-          Train your knowledge interactively with AI-generated flashcards.
+          Generate a CSV of flashcards from past exams to import into Anki or RemNote.
         </p>
       </div>
 
-      {flashcards.length === 0 ? (
+      {!csvContent ? (
         <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm text-center">
           <Layers className="w-16 h-16 text-indigo-400 mx-auto mb-6 opacity-50" />
           <h4 className="text-2xl font-bold text-slate-800 mb-4 tracking-tight">
-            Ready for your flashcards training?
+            Ready to generate flashcards?
           </h4>
           <p className="text-slate-500 mb-8 max-w-sm mx-auto leading-relaxed">
-            Let our AI extract the most important questions from your old exams for you.
+            Let our AI extract the most important questions from your old exams to use in your preferred study tool.
           </p>
 
           <button
@@ -1358,12 +1325,12 @@ function FlashcardsTab({
             {isGenerating ? (
               <>
                 <Loader2 className="w-6 h-6 animate-spin" />
-                KI analysiert Dokumente...
+                AI is analyzing documents...
               </>
             ) : (
               <>
                 <Sparkles className="w-6 h-6" />
-                Flashcards aus Altklausuren generieren
+                Generate Flashcards
               </>
             )}
           </button>
@@ -1377,59 +1344,20 @@ function FlashcardsTab({
         </div>
       ) : (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          {/* THE FLASHCARD */}
-          <div className="perspective-1000 w-full h-80 focus:outline-none" onClick={() => setIsFlipped(!isFlipped)} role="button" tabIndex={0}>
-            <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d cursor-pointer ${isFlipped ? 'rotate-y-180' : ''} shadow-xl rounded-3xl`}>
-              {/* FRONT */}
-              <div className="absolute w-full h-full backface-hidden bg-white border-2 border-indigo-100 rounded-3xl p-8 flex flex-col items-center justify-center text-center">
-                <span className="absolute top-6 left-8 text-indigo-400 font-semibold tracking-wider text-sm uppercase">Question</span>
-                <p className="text-2xl font-bold text-slate-800 leading-snug">
-                  {flashcards[currentIndex].question}
-                </p>
-                <span className="absolute bottom-6 text-slate-400 text-sm animate-pulse">Click to flip</span>
-              </div>
-
-              {/* BACK */}
-              <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-3xl p-8 flex flex-col items-center justify-center text-center rotate-y-180">
-                <span className="absolute top-6 left-8 text-indigo-500 font-semibold tracking-wider text-sm uppercase">Answer</span>
-                <p className="text-xl font-medium text-slate-700 leading-relaxed overflow-y-auto w-full px-4 max-h-[80%] custom-scrollbar">
-                  {flashcards[currentIndex].answer}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* CONTROLS */}
-          <div className="flex items-center justify-between bg-white px-6 py-4 rounded-2xl shadow-sm border border-slate-200">
-            <button
-              onClick={prevCard}
-              disabled={currentIndex === 0}
-              className="px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 text-slate-700"
-            >
-              ⬅️ Vorherige Karte
-            </button>
-
-            <div className="font-semibold text-slate-600 tracking-wide">
-              Karte {currentIndex + 1} von {flashcards.length}
-            </div>
-
-            <button
-              onClick={nextCard}
-              disabled={currentIndex === flashcards.length - 1}
-              className="px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 text-slate-700"
-            >
-              Nächste Karte ➡️
-            </button>
-          </div>
-
-          {/* EXPORT ACTION */}
-          <div className="pt-4">
+          <div className="bg-emerald-50 border border-emerald-100 p-8 rounded-3xl text-center shadow-sm">
+            <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-6" />
+            <h4 className="text-2xl font-bold text-slate-800 mb-2">
+              Flashcards Generated!
+            </h4>
+            <p className="text-slate-600 mb-8">
+              Your CSV file is ready. You can now download it and import it into Anki or RemNote.
+            </p>
             <button
               onClick={handleDownloadCsv}
-              className="w-full py-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-sm hover:shadow"
+              className="w-full max-w-sm mx-auto py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-md hover:shadow-lg"
             >
               <Download className="w-6 h-6" />
-              💾 In Anki / RemNote importieren (CSV Download)
+              💾 Download CSV for Anki / RemNote
             </button>
           </div>
         </div>
