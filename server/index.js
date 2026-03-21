@@ -206,26 +206,23 @@ app.get('/api/courses/:courseId/exams', async (req, res) => {
 // POST generate exam via n8n
 app.post('/api/courses/:courseId/exams/generate', async (req, res) => {
   const { courseId } = req.params;
-  const { prompt } = req.body;
-
-  if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
-    return res.status(400).json({ error: 'Prompt ist erforderlich' });
-  }
+  const { prompt, fileName } = req.body;
 
   try {
     // 1. Insert into DB first so we have a record even before n8n finishes
     const dbResult = await pool.query(
-      'INSERT INTO public.generated_exams (course_id, prompt) VALUES ($1, $2) RETURNING *',
-      [courseId, prompt.trim()]
+      'INSERT INTO public.generated_exams (course_id, file_name) VALUES ($1, $2) RETURNING *',
+      [courseId, fileName ? fileName.trim() : null]
     );
     const newExam = dbResult.rows[0];
 
     // 2. Forward to n8n
     const webhookUrl = process.env.N8N_WEBHOOK_GENERATOR;
     const payload = {
-      prompt: prompt.trim(),
       course_id: parseInt(courseId),
-      exam_id: newExam.id
+      exam_id: newExam.id,
+      prompt: prompt ? prompt.trim() : '',
+      file_name: fileName ? fileName.trim() : ''
     };
 
     const parsedN8n = await callN8nWebhook(webhookUrl, payload);
@@ -244,7 +241,7 @@ app.post('/api/courses/:courseId/exams/generate', async (req, res) => {
     });
   } catch (err) {
     console.error('POST /api/exams/generate error:', err);
-    res.status(500).json({ error: 'Fehler beim Generieren: ' + err.message });
+    res.status(500).json({ error: 'Fehler beim Generieren: ' + err.message, stack: err.stack });
   }
 });
 
@@ -269,6 +266,7 @@ app.post('/api/courses/:courseId/feedback', upload.single('file'), async (req, r
     const formData = new FormData();
     formData.append('course_id', courseId);
     formData.append('exam_id', exam_id);
+    formData.append('generated_exam_id', exam_id);
     formData.append('file', file.buffer, {
       filename: file.originalname,
       contentType: file.mimetype,
@@ -286,6 +284,33 @@ app.post('/api/courses/:courseId/feedback', upload.single('file'), async (req, r
   } catch (err) {
     console.error('POST /api/feedback error:', err);
     res.status(500).json({ error: 'Fehler beim Erhalten des Feedbacks: ' + err.message });
+  }
+});
+
+// ==========================================
+// FLASHCARDS
+// ==========================================
+
+app.post('/api/courses/:courseId/flashcards', async (req, res) => {
+  const { courseId } = req.params;
+
+  try {
+    const webhookUrl = process.env.N8N_WEBHOOK_FLASHCARDS;
+    if (!webhookUrl) {
+      return res.status(500).json({ error: 'Flashcards Webhook nicht konfiguriert' });
+    }
+
+    const payload = {
+      course_id: parseInt(courseId)
+    };
+
+    const parsedN8n = await callN8nWebhook(webhookUrl, payload);
+    const csvData = parsedN8n.raw || parsedN8n.data || parsedN8n.csv;
+
+    res.json({ csvData: typeof csvData === 'string' ? csvData : JSON.stringify(parsedN8n) });
+  } catch (err) {
+    console.error('POST /api/flashcards error:', err);
+    res.status(500).json({ error: 'Fehler beim Generieren der Flashcards: ' + err.message });
   }
 });
 

@@ -20,8 +20,8 @@ export type KnowledgeEntry = {
 export type GeneratedExam = {
   id: number;
   course_id: number;
-  prompt?: string;
   url: string | null;
+  file_name?: string | null;
   evaluation_url?: string | null;
   status?: string;
   created_at: string;
@@ -111,11 +111,11 @@ export async function fetchExams(courseId: number): Promise<GeneratedExam[]> {
   return res.json();
 }
 
-export async function generateExam(courseId: number, prompt: string): Promise<{ message: string; exams: GeneratedExam[] }> {
+export async function generateExam(courseId: number, prompt: string, fileName: string): Promise<{ message: string; exams: GeneratedExam[] }> {
   const res = await fetch(`${API_BASE}/courses/${courseId}/exams/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify({ prompt, fileName }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Generierung fehlgeschlagen' }));
@@ -141,4 +141,20 @@ export async function submitFeedback(courseId: number, examId: number, file: Fil
     throw new Error(err.error || 'Feedback fehlgeschlagen');
   }
   return res.json();
+}
+// ==========================================
+// Flashcards
+// ==========================================
+export async function generateFlashcards(courseId: number): Promise<string> {
+  const res = await fetch(`${API_BASE}/courses/${courseId}/flashcards`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Flashcards fehlgeschlagen' }));
+    throw new Error(err.error || 'Flashcards fehlgeschlagen');
+  }
+  const data = await res.json();
+  return data.csvData;
 }

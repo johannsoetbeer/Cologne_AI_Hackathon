@@ -8,7 +8,7 @@ import {
   CheckCircle,
   Download,
   BrainCircuit,
-  PieChart,
+  Send,
   Loader2,
   ChevronRight,
   Library,
@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Sparkles,
   Trash2,
+  Layers,
 } from 'lucide-react';
 import {
   fetchCourses,
@@ -31,9 +32,10 @@ import {
   type KnowledgeEntry,
   type GeneratedExam,
   type FeedbackResult,
+  generateFlashcards,
 } from './api';
 
-type Tab = 'database' | 'generator' | 'feedback';
+type Tab = 'database' | 'generator' | 'feedback' | 'flashcards';
 
 export default function App() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -184,10 +186,10 @@ export default function App() {
               <div key={subject.id} className="relative group w-full flex items-center">
                 <button
                   onClick={() => handleSelectSubject(subject.id)}
-                  className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-left ${
+                  className={`flex-1 flex items-center gap-3 py-2.5 pl-3 pr-10 rounded-xl transition-all duration-200 text-left ${
                     activeSubjectId === subject.id
                       ? 'bg-indigo-50 text-indigo-700 font-medium shadow-sm'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 group-hover:pr-10'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
                   <Folder
@@ -203,8 +205,8 @@ export default function App() {
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDeleteSubject(subject.id, subject.name); }}
                   disabled={isDeletingCourseId === subject.id}
-                  className={`absolute right-2 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all ${
-                    activeSubjectId === subject.id ? 'opacity-100 flex' : 'opacity-0 group-hover:opacity-100 hidden group-hover:flex'
+                  className={`absolute right-2 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-opacity flex ${
+                    activeSubjectId === subject.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto'
                   }`}
                   title="Fach löschen"
                 >
@@ -331,6 +333,9 @@ export default function App() {
                 <TabButton active={activeTab === 'feedback'} onClick={() => setActiveTab('feedback')} icon={<FileBadge className="w-4 h-4" />}>
                   Korrektur & Feedback
                 </TabButton>
+                <TabButton active={activeTab === 'flashcards'} onClick={() => setActiveTab('flashcards')} icon={<Layers className="w-4 h-4" />}>
+                  Flashcards
+                </TabButton>
               </div>
             </div>
 
@@ -355,6 +360,11 @@ export default function App() {
                   <FeedbackTab
                     courseId={activeSubject.id}
                     exams={exams}
+                  />
+                )}
+                {activeTab === 'flashcards' && (
+                  <FlashcardsTab
+                    courseId={activeSubject.id}
                   />
                 )}
               </div>
@@ -630,6 +640,7 @@ function GeneratorTab({
   onRefresh: () => void;
 }) {
   const [topic, setTopic] = useState('');
+  const [fileName, setFileName] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
 
@@ -639,8 +650,9 @@ function GeneratorTab({
     setGenError(null);
 
     try {
-      await generateExam(courseId, topic.trim());
+      await generateExam(courseId, topic.trim(), fileName.trim());
       setTopic('');
+      setFileName('');
       onRefresh();
     } catch (err) {
       setGenError(err instanceof Error ? err.message : 'Generierung fehlgeschlagen');
@@ -691,10 +703,20 @@ function GeneratorTab({
             Worüber möchtest du eine Klausur schreiben?
           </label>
           <textarea
-            className="w-full h-32 p-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none shadow-sm text-slate-700"
+            className="w-full h-32 p-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none shadow-sm text-slate-700 mb-4"
             placeholder="z.B. 3 Aufgaben zu Matrizen, 2 Aufgaben zu Vektorräumen..."
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
+          />
+          <label className="block text-sm font-semibold text-slate-700 mb-2">
+            Dateiname (Optional)
+          </label>
+          <input
+            type="text"
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm text-slate-700"
+            placeholder="z.B. Lineare_Algebra_Übung_1"
+            value={fileName}
+            onChange={(e) => setFileName(e.target.value)}
           />
         </div>
 
@@ -702,7 +724,7 @@ function GeneratorTab({
           onClick={handleGenerate}
           disabled={!topic.trim() || isGenerating}
           className={`w-full py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md ${
-            !topic.trim()
+            !topic.trim() || isGenerating
               ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
               : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:-translate-y-0.5'
           }`}
@@ -744,7 +766,7 @@ function GeneratorTab({
                 className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-700 truncate">{exam.prompt || 'Individuelle Klausur'}</p>
+                  <p className="font-medium text-slate-700 truncate">{exam.file_name || `Klausur #${exam.id}`}</p>
                   <p className="text-xs text-slate-400 mt-1">
                     {exam.created_at ? new Date(exam.created_at).toLocaleDateString('de-DE', {
                       day: '2-digit',
@@ -821,125 +843,181 @@ function FeedbackTab({
   };
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h3 className="text-xl font-bold text-slate-800 mb-2">Korrektur & Feedback</h3>
-        <p className="text-slate-500">
-          Lade deine bearbeitete Klausur hoch, um eine automatische KI-Bewertung zu erhalten.
-        </p>
-      </div>
+    <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      {!selectedExamId ? (
+        <div className="p-6 overflow-y-auto">
+          <h3 className="text-xl font-bold text-slate-800 mb-2">Korrektur & Feedback</h3>
+          <p className="text-slate-500 mb-6">
+            Wähle eine generierte Klausur aus, um deine Lösung hochzuladen und eine Bewertung zu erhalten.
+          </p>
 
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-        {/* Exam Selector */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Welche Klausur hast du bearbeitet?
-          </label>
           {exams.length === 0 ? (
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-500 text-center">
-              <AlertCircle className="w-5 h-5 mx-auto mb-2 text-slate-400" />
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center text-slate-500">
+              <AlertCircle className="w-6 h-6 mx-auto mb-3 text-slate-400" />
               Keine Klausuren vorhanden. Generiere zuerst eine im Klausur-Generator Tab.
             </div>
           ) : (
-            <>
-            <select
-              value={selectedExamId || ''}
-              onChange={(e) => setSelectedExamId(e.target.value ? Number(e.target.value) : null)}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white text-slate-700 shadow-sm"
-            >
-              <option value="">Klausur auswählen...</option>
+            <div className="space-y-3">
               {exams.map((exam) => (
-                <option key={exam.id} value={exam.id}>
-                  {(exam.prompt || 'Ohne Titel').substring(0, 60)}{(exam.prompt || 'Ohne Titel').length > 60 ? '...' : ''} — {exam.created_at ? new Date(exam.created_at).toLocaleDateString('de-DE') : 'Unbekanntes Datum'}
-                </option>
+                <button
+                  key={exam.id}
+                  onClick={() => {
+                    setSelectedExamId(exam.id);
+                    setFeedbackResult(null);
+                    setFile(null);
+                  }}
+                  className="w-full text-left bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all flex items-center justify-between group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="bg-indigo-50 p-3 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                      <FileBadge className="w-6 h-6 text-indigo-500" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-slate-800">{exam.file_name || `Klausur #${exam.id}`}</h4>
+                      <p className="text-sm text-slate-500">
+                        Generiert am {exam.created_at ? new Date(exam.created_at).toLocaleDateString('de-DE') : 'Unbekannt'}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                </button>
               ))}
-            </select>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white z-10">
+            <button
+              onClick={() => setSelectedExamId(null)}
+              className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" />
+              Zurück zur Übersicht
+            </button>
+            <div className="font-semibold text-slate-800">
+              {selectedExam?.file_name || `Klausur #${selectedExamId}`}
+            </div>
+          </div>
 
-            {/* Download link for selected exam */}
-            {selectedExam?.url && (
-              <a
-                href={selectedExam.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-medium hover:bg-indigo-100 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                Klausur-PDF ansehen / herunterladen
-              </a>
+          {/* Chat History */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50">
+            {/* AI Welcome Message */}
+            <div className="flex gap-4">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-sm">
+                <BrainCircuit className="w-5 h-5 text-white" />
+              </div>
+              <div className="bg-white p-4 rounded-2xl rounded-tl-none border border-slate-200 shadow-sm max-w-[80%]">
+                <p className="text-slate-700">
+                  Hallo! Ich bin bereit, deine Lösung für <strong>{selectedExam?.file_name || `Klausur #${selectedExamId}`}</strong> zu korrigieren. 
+                  Bitte lade ein PDF oder ein Foto deiner Bearbeitung hoch.
+                </p>
+                {selectedExam?.url && (
+                  <a
+                    href={selectedExam.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    Klausur-PDF ansehen
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* AI Error */}
+            {fbError && (
+              <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-sm">
+                  <BrainCircuit className="w-5 h-5 text-white" />
+                </div>
+                <div className="bg-red-50 p-4 rounded-2xl rounded-tl-none border border-red-200 text-red-700 flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5" />
+                  {fbError}
+                </div>
+              </div>
             )}
-            </>
+
+            {/* Uploaded File Message */}
+            {(file || isUploading || feedbackResult) && (
+              <div className="flex gap-4 flex-row-reverse">
+                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                  <span className="text-slate-600 font-bold text-sm">DU</span>
+                </div>
+                <div className="bg-indigo-600 text-white p-4 rounded-2xl rounded-tr-none shadow-sm flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-indigo-200" />
+                  <div>
+                    <p className="font-medium">{file ? file.name : (feedbackResult ? 'Datei hochgeladen' : '...')}</p>
+                    {file && <p className="text-xs text-indigo-200">{(file.size / 1024).toFixed(0)} KB</p>}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* AI Processing / Results */}
+            {isUploading && (
+              <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-sm">
+                  <BrainCircuit className="w-5 h-5 text-white" />
+                </div>
+                <div className="bg-white p-4 rounded-2xl rounded-tl-none border border-slate-200 shadow-sm flex items-center gap-3 text-slate-700">
+                  <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
+                  Analysiere deine Lösung... Bitte habe einen Moment Geduld.
+                </div>
+              </div>
+            )}
+
+            {feedbackResult && !isUploading && (
+              <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-sm">
+                  <BrainCircuit className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 max-w-[90%]">
+                  <FeedbackCard feedback={feedbackResult} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Input Area */}
+          {!feedbackResult && (
+            <div className="p-4 bg-white border-t border-slate-100">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-3 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl transition-colors shrink-0"
+                  title="Datei auswählen"
+                >
+                  <UploadCloud className="w-6 h-6" />
+                </button>
+                <div className="flex-1 px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-500 text-sm">
+                  {file ? file.name : 'Keine Datei ausgewählt...'}
+                </div>
+                <button
+                  onClick={handleSubmit}
+                  disabled={!file || isUploading}
+                  className={`px-6 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-md shrink-0 ${
+                    !file || isUploading
+                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg'
+                  }`}
+                >
+                  <Send className="w-5 h-5" />
+                  Senden
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </div>
+            </div>
           )}
         </div>
-
-        {/* File Upload */}
-        <div className="border border-slate-200 rounded-xl p-4 flex items-center justify-between bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white rounded-lg border border-slate-100 shadow-sm">
-              <UploadCloud className="w-5 h-5 text-slate-500" />
-            </div>
-            <div>
-              {file ? (
-                <>
-                  <p className="font-medium text-slate-700">{file.name}</p>
-                  <p className="text-xs text-slate-500">{(file.size / 1024).toFixed(0)} KB</p>
-                </>
-              ) : (
-                <>
-                  <p className="font-medium text-slate-700">Bild oder PDF auswählen</p>
-                  <p className="text-xs text-slate-500">Scans deiner Handschrift werden unterstützt</p>
-                </>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
-          >
-            Durchsuchen
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-        </div>
-
-        {/* Submit Button */}
-        <button
-          onClick={handleSubmit}
-          disabled={isUploading || !selectedExamId || !file}
-          className={`w-full py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md ${
-            isUploading || !selectedExamId || !file
-              ? 'bg-slate-100 text-slate-400 shadow-none cursor-not-allowed'
-              : 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-lg hover:-translate-y-0.5'
-          }`}
-        >
-          {isUploading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Analysiere Antworten...
-            </>
-          ) : (
-            <>
-              <PieChart className="w-5 h-5" />
-              Ergebnis hochladen & KI-Feedback erhalten
-            </>
-          )}
-        </button>
-
-        {fbError && (
-          <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            {fbError}
-          </div>
-        )}
-      </div>
-
-      {/* FEEDBACK RESULT CARD */}
-      {feedbackResult && (
-        <FeedbackCard feedback={feedbackResult} />
       )}
     </div>
   );
@@ -967,19 +1045,19 @@ function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
         <div>
           <h4 className="text-2xl font-bold text-slate-800 tracking-tight">Klausur-Ergebnis</h4>
           <p className="text-indigo-600 font-medium">
-            {typeof score === 'number' ? `${score} von ${maxScore} Punkten` : score} {percentage !== null && `(${percentage}%)`}
+            {typeof score === 'number' ? `${score} von ${maxScore} Punkten` : String(score)} {percentage !== null && `(${percentage}%)`}
           </p>
         </div>
       </div>
 
       {/* General Feedback or Raw Text */}
-      {feedback.feedback && (
+      {!!feedback.feedback && (
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-6">
-          <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{feedback.feedback}</p>
+          <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{String(feedback.feedback)}</p>
         </div>
       )}
 
-      {!feedback.feedback && !hasDetails && feedback.raw && (
+      {!feedback.feedback && !hasDetails && !!feedback.raw && (
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-6">
           <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{String(feedback.raw)}</p>
         </div>
@@ -1042,6 +1120,187 @@ function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
       {!feedback.feedback && !hasDetails && !feedback.raw && (
         <div className="bg-slate-50 p-4 rounded-xl text-xs font-mono text-slate-500 overflow-auto max-h-40">
           <pre>{JSON.stringify(feedback, null, 2)}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==========================================
+// Tab 4: Flashcards
+// ==========================================
+function FlashcardsTab({ courseId }: { courseId: number }) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+  const [cards, setCards] = useState<{front: string, back: string}[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [csvContent, setCsvContent] = useState<string | null>(null);
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setGenError(null);
+    setCards([]);
+    setCsvContent(null);
+    
+    try {
+      const csv = await generateFlashcards(courseId);
+      setCsvContent(csv);
+      
+      // Parse CSV (simple semicolon split)
+      const lines = csv.split('\n');
+      const parsedCards = lines
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .map(line => {
+          const [front, ...rest] = line.split(';');
+          return { front: front || '', back: rest.join(';') || '' };
+        })
+        .filter(card => card.front && card.back);
+        
+      setCards(parsedCards);
+      setCurrentIndex(0);
+      setIsFlipped(false);
+    } catch (err) {
+      setGenError(err instanceof Error ? err.message : 'Generierung fehlgeschlagen');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownloadCsv = () => {
+    if (!csvContent) return;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `flashcards_course_${courseId}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const nextCard = () => {
+    setIsFlipped(false);
+    setTimeout(() => {
+      setCurrentIndex(prev => Math.min(prev + 1, cards.length - 1));
+    }, 150);
+  };
+
+  const prevCard = () => {
+    setIsFlipped(false);
+    setTimeout(() => {
+      setCurrentIndex(prev => Math.max(prev - 1, 0));
+    }, 150);
+  };
+
+  return (
+    <div className="space-y-8 text-left max-w-2xl mx-auto w-full">
+      <div>
+        <h3 className="text-xl font-bold text-slate-800 mb-2">Flashcards-Trainer</h3>
+        <p className="text-slate-500">
+          Trainiere dein Wissen interaktiv mit KI-generierten Karteikarten basierend auf deinen Materialien.
+        </p>
+      </div>
+
+      {cards.length === 0 ? (
+        <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm text-center">
+          <Layers className="w-16 h-16 text-indigo-400 mx-auto mb-6 opacity-50" />
+          <h4 className="text-2xl font-bold text-slate-800 mb-4 tracking-tight">
+            Bereit für dein Karteikarten-Training?
+          </h4>
+          <p className="text-slate-500 mb-8 max-w-sm mx-auto leading-relaxed">
+            Lass unsere KI aus deinen Altklausuren und Wissenstabs die wichtigsten Lernfragen für dich als Flashcards extrahieren.
+          </p>
+          
+          <button
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            className={`w-full max-w-sm mx-auto py-5 rounded-2xl font-semibold flex items-center justify-center gap-3 transition-all shadow-md text-lg ${
+              isGenerating
+                ? 'bg-slate-100 text-slate-500 cursor-wait shadow-none'
+                : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-xl hover:-translate-y-1'
+            }`}
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin" />
+                KI analysiert Dokumente...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-6 h-6" />
+                Flashcards generieren
+              </>
+            )}
+          </button>
+
+          {genError && (
+            <div className="mt-6 bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center justify-center gap-2 max-w-sm mx-auto">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              {genError}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          {/* THE FLASHCARD */}
+          <div className="perspective-1000 w-full h-80 focus:outline-none" onClick={() => setIsFlipped(!isFlipped)} role="button" tabIndex={0}>
+            <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d cursor-pointer ${isFlipped ? 'rotate-y-180' : ''} shadow-xl rounded-3xl`}>
+              {/* FRONT */}
+              <div className="absolute w-full h-full backface-hidden bg-white border-2 border-indigo-100 rounded-3xl p-8 flex flex-col items-center justify-center text-center">
+                <span className="absolute top-6 left-8 text-indigo-400 font-semibold tracking-wider text-sm uppercase">Frage</span>
+                <p className="text-2xl font-bold text-slate-800 leading-snug">
+                  {cards[currentIndex].front}
+                </p>
+                <span className="absolute bottom-6 text-slate-400 text-sm animate-pulse">Zum Umdrehen klicken</span>
+              </div>
+              
+              {/* BACK */}
+              <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-3xl p-8 flex flex-col items-center justify-center text-center rotate-y-180">
+                 <span className="absolute top-6 left-8 text-indigo-500 font-semibold tracking-wider text-sm uppercase">Antwort</span>
+                <p className="text-xl font-medium text-slate-700 leading-relaxed overflow-y-auto w-full px-4 max-h-[80%] custom-scrollbar">
+                  {cards[currentIndex].back}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* CONTROLS */}
+          <div className="flex items-center justify-between bg-white px-6 py-4 rounded-2xl shadow-sm border border-slate-200">
+             <button
+                onClick={prevCard}
+                disabled={currentIndex === 0}
+                className="px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 text-slate-700"
+              >
+                <ChevronRight className="w-5 h-5 rotate-180" />
+                Vorherige
+              </button>
+              
+              <div className="font-semibold text-slate-600 tracking-wide">
+                Karte {currentIndex + 1} von {cards.length}
+              </div>
+
+              <button
+                onClick={nextCard}
+                disabled={currentIndex === cards.length - 1}
+                className="px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 text-slate-700"
+              >
+                Nächste
+                <ChevronRight className="w-5 h-5" />
+              </button>
+          </div>
+
+           {/* EXPORT ACTION */}
+          <div className="pt-4">
+             <button
+              onClick={handleDownloadCsv}
+              className="w-full py-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-sm hover:shadow"
+            >
+              <Download className="w-6 h-6" />
+              In Anki / RemNote importieren (CSV Download)
+            </button>
+          </div>
         </div>
       )}
     </div>
