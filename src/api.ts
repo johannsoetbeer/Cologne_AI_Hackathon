@@ -62,7 +62,7 @@ export type FeedbackResult = FeedbackResponse[];
 // ==========================================
 export async function fetchCourses(): Promise<Course[]> {
   const res = await fetch(`${API_BASE}/courses`);
-  if (!res.ok) throw new Error('Fehler beim Laden der Fächer');
+  if (!res.ok) throw new Error('Error loading courses');
   return res.json();
 }
 
@@ -72,7 +72,7 @@ export async function createCourse(name: string): Promise<Course> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),
   });
-  if (!res.ok) throw new Error('Fehler beim Erstellen des Fachs');
+  if (!res.ok) throw new Error('Error creating course');
   return res.json();
 }
 
@@ -80,7 +80,7 @@ export async function deleteCourse(id: number): Promise<{ message: string }> {
   const res = await fetch(`${API_BASE}/courses/${id}`, {
     method: 'DELETE',
   });
-  if (!res.ok) throw new Error('Fehler beim Löschen des Fachs');
+  if (!res.ok) throw new Error('Error deleting course');
   return res.json();
 }
 
@@ -89,21 +89,20 @@ export async function deleteCourse(id: number): Promise<{ message: string }> {
 // ==========================================
 export async function fetchKnowledge(courseId: number): Promise<KnowledgeEntry[]> {
   const res = await fetch(`${API_BASE}/courses/${courseId}/knowledge`);
-  if (!res.ok) throw new Error('Fehler beim Laden der Wissensdatenbank');
+  if (!res.ok) throw new Error('Error loading knowledge base');
   return res.json();
 }
 
 export async function uploadKnowledge(courseId: number, file: File): Promise<{ message: string; knowledge: KnowledgeEntry[] }> {
   const formData = new FormData();
   formData.append('file', file);
-
   const res = await fetch(`${API_BASE}/courses/${courseId}/knowledge/upload`, {
     method: 'POST',
     body: formData,
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Upload fehlgeschlagen' }));
-    throw new Error(err.error || 'Upload fehlgeschlagen');
+    const err = await res.json().catch(() => ({ error: 'Upload failed' }));
+    throw new Error(err.error || 'Upload failed');
   }
   return res.json();
 }
@@ -112,7 +111,7 @@ export async function deleteKnowledge(courseId: number, id: number): Promise<{ m
   const res = await fetch(`${API_BASE}/courses/${courseId}/knowledge/${id}`, {
     method: 'DELETE',
   });
-  if (!res.ok) throw new Error('Fehler beim Löschen des Dokuments');
+  if (!res.ok) throw new Error('Error deleting document');
   return res.json();
 }
 
@@ -121,7 +120,7 @@ export async function deleteKnowledge(courseId: number, id: number): Promise<{ m
 // ==========================================
 export async function fetchExams(courseId: number): Promise<GeneratedExam[]> {
   const res = await fetch(`${API_BASE}/courses/${courseId}/exams`);
-  if (!res.ok) throw new Error('Fehler beim Laden der Klausuren');
+  if (!res.ok) throw new Error('Error loading exams');
   return res.json();
 }
 
@@ -132,8 +131,8 @@ export async function generateExam(courseId: number, prompt: string, fileName: s
     body: JSON.stringify({ prompt, fileName }),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Generierung fehlgeschlagen' }));
-    throw new Error(err.error || 'Generierung fehlgeschlagen');
+    const err = await res.json().catch(() => ({ error: 'Generation failed' }));
+    throw new Error(err.error || 'Generation failed');
   }
   return res.json();
 }
@@ -145,14 +144,13 @@ export async function submitFeedback(courseId: number, examId: number, file: Fil
   const formData = new FormData();
   formData.append('file', file);
   formData.append('exam_id', examId.toString());
-
   const res = await fetch(`${API_BASE}/courses/${courseId}/feedback`, {
     method: 'POST',
     body: formData,
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Feedback fehlgeschlagen' }));
-    throw new Error(err.error || 'Feedback fehlgeschlagen');
+    const err = await res.json().catch(() => ({ error: 'Feedback submission failed' }));
+    throw new Error(err.error || 'Feedback submission failed');
   }
   return res.json();
 }
@@ -166,8 +164,8 @@ export async function generateFlashcards(courseId: number): Promise<string> {
     body: JSON.stringify({}),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Flashcards fehlgeschlagen' }));
-    throw new Error(err.error || 'Flashcards fehlgeschlagen');
+    const err = await res.json().catch(() => ({ error: 'Flashcards generation failed' }));
+    throw new Error(err.error || 'Flashcards generation failed');
   }
   const data = await res.json();
   return data.csvData;

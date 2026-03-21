@@ -1,0 +1,28 @@
+--- PDF TEXT EXTRACTION ---
+
+Source: https://res.cloudinary.com/dpuecaawb/image/upload/v1774075903/hff7ckvo8qcjuwjeut0v.pdf
+Exam: Programmierung WiSe 21/22 (24.03.2022)
+
+Summary:
+The PDF contains the programming exam for the winter semester 21/22.
+
+Key Tasks and Topics:
+1. Java (Hoare-Calculus, JumpingList, Inheritance)
+2. Haskell (Type Inference, Recursive Data Structures, Functional Composition)
+3. Prolog (Unification, Proof Trees, Game Logic "Klappenspiel")
+
+--- RAW CONTENT SNIPPET ---
+
+Aufgabe 5 (Haskell): (2 + 4 + 3 + 3 + 8 = 20 Punkte)
+a) Geben Sie zur folgenden Haskell–Funktion f den allgemeinsten Typ an.
+f h (x:xs) = if x then [h x] else h x : f h xs
+
+eval :: Expr -> (String -> Int) -> Int
+run :: Program -> (String -> Int) -> (String -> Int)
+
+Aufgabe 6 (Prolog): (2 + 8 + (3 + 4 + 3) = 20 Punkte)
+i) fromNToM(N,M,XS)
+ii) klappbar(X,XS,YS)
+iii) perfektesSpiel(XS)
+
+(Full content extracted and ready for analysis)
