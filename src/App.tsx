@@ -187,8 +187,8 @@ export default function App() {
                 <button
                   onClick={() => handleSelectSubject(subject.id)}
                   className={`flex-1 flex items-center gap-3 py-2.5 pl-3 pr-10 rounded-xl transition-all duration-200 text-left ${activeSubjectId === subject.id
-                      ? 'bg-indigo-50 text-indigo-700 font-medium shadow-sm'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-indigo-50 text-indigo-700 font-medium shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                 >
                   <Folder
@@ -337,33 +337,33 @@ export default function App() {
             </div>
 
             {/* Tab Content */}
-            <div className="flex-1 overflow-y-auto p-10">
+            <div className="flex-1 overflow-y-auto p-10" key={activeSubject.id}>
               <div className="max-w-4xl mx-auto">
-                {activeTab === 'database' && (
+                <div className={activeTab === 'database' ? 'block' : 'hidden'}>
                   <DatabaseTab
                     courseId={activeSubject.id}
                     knowledge={knowledge}
                     onRefresh={refreshKnowledge}
                   />
-                )}
-                {activeTab === 'generator' && (
+                </div>
+                <div className={activeTab === 'generator' ? 'block' : 'hidden'}>
                   <GeneratorTab
                     courseId={activeSubject.id}
                     exams={exams}
                     onRefresh={refreshExams}
                   />
-                )}
-                {activeTab === 'feedback' && (
+                </div>
+                <div className={activeTab === 'feedback' ? 'block' : 'hidden'}>
                   <FeedbackTab
                     courseId={activeSubject.id}
                     exams={exams}
                   />
-                )}
-                {activeTab === 'flashcards' && (
+                </div>
+                <div className={activeTab === 'flashcards' ? 'block' : 'hidden'}>
                   <FlashcardsTab
                     courseId={activeSubject.id}
                   />
-                )}
+                </div>
               </div>
             </div>
           </div>
@@ -516,10 +516,10 @@ function DatabaseTab({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={`border-2 border-dashed rounded-3xl p-12 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 group ${isDragging
-            ? 'border-indigo-500 bg-indigo-100/50 scale-[1.02]'
-            : isUploading
-              ? 'border-amber-300 bg-amber-50/50 cursor-wait'
-              : 'border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-400'
+          ? 'border-indigo-500 bg-indigo-100/50 scale-[1.02]'
+          : isUploading
+            ? 'border-amber-300 bg-amber-50/50 cursor-wait'
+            : 'border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-400'
           }`}
       >
         <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
@@ -640,33 +640,16 @@ function GeneratorTab({
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
 
-  const EXAM_WEBHOOK_URL = 'https://abudi42.app.n8n.cloud/webhook-test/3a086711-6ca2-49d0-919a-490dad2276bd';
-
   const handleGenerate = async () => {
     if (isGenerating) return;
-    
+
     const combinedPrompt = `Topic Focus: ${focusTopic || 'General'}\nDifficulty: ${difficulty}\nAdditional Notes: ${additionalNotes}`;
 
     setIsGenerating(true);
-    
+    setGenError(null);
+
     try {
-      // Send data to n8n webhook
-      const webhookPayload = {
-        topic_focus: focusTopic || 'General',
-        file_name: fileName.trim() || `Exam_${Date.now()}`,
-        difficulty_level: difficulty,
-        specifics: additionalNotes,
-        course_id: courseId,
-      };
-
-      // Call webhook in background (non-blocking)
-      fetch(EXAM_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(webhookPayload),
-      }).catch(err => console.error('Webhook error:', err));
-
-      // Continue with local exam generation
+      // The server handles: PDF text extraction → AI LaTeX generation → n8n webhook
       await generateExam(courseId, combinedPrompt, fileName.trim());
       setFocusTopic('');
       setAdditionalNotes('');
@@ -740,8 +723,8 @@ function GeneratorTab({
                     key={level}
                     onClick={() => setDifficulty(level)}
                     className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium border transition-all ${difficulty === level
-                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm'
-                        : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                      ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm'
+                      : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                       }`}
                   >
                     {level.charAt(0).toUpperCase() + level.slice(1)}
@@ -782,8 +765,8 @@ function GeneratorTab({
           onClick={handleGenerate}
           disabled={isGenerating}
           className={`w-full py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md ${isGenerating
-              ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
-              : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:-translate-y-0.5'
+            ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
+            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:-translate-y-0.5'
             }`}
         >
           {isGenerating ? (
@@ -971,8 +954,8 @@ function FeedbackTab({
                 <div
                   onClick={() => !isUploading && fileInputRef.current?.click()}
                   className={`border-2 border-dashed rounded-3xl p-12 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${isUploading
-                      ? 'border-amber-300 bg-amber-50/50 cursor-wait'
-                      : 'border-indigo-200 bg-white hover:bg-indigo-50 hover:border-indigo-400'
+                    ? 'border-amber-300 bg-amber-50/50 cursor-wait'
+                    : 'border-indigo-200 bg-white hover:bg-indigo-50 hover:border-indigo-400'
                     }`}
                 >
                   <input
@@ -1158,114 +1141,114 @@ function FeedbackCard({ feedbackResult }: { feedbackResult: FeedbackResult | any
           </div>
         </div>
       </div>
-  
-    {/* Detailed Tasks Breakdown */ }
-    <div className="space-y-6">
-      <h3 className="text-xl font-bold text-slate-800 px-2">Task Details</h3>
-      {results.map((res: any, i: number) => {
-      const taskPercent = res.max_points > 0 ? (res.achieved_points / res.max_points) * 100 : 0;
-      const isFull = res.achieved_points === res.max_points;
-      const isZero = res.achieved_points === 0;
 
-      return (
-        <div key={i} className={`bg-white p-6 md:p-8 rounded-3xl border-2 transition-all duration-300 shadow-sm hover:shadow-md ${isFull ? 'border-emerald-100 hover:border-emerald-300' : isZero ? 'border-red-100 hover:border-red-300' : 'border-amber-100 hover:border-amber-300'}`}>
-          {/* Task Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-100">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <span className={`px-3 py-1 rounded-lg text-sm font-bold ${isFull ? 'bg-emerald-100 text-emerald-700' : isZero ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                  Task {res.label}
-                </span>
-                <div className="h-2 flex-1 max-w-[200px] bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${isFull ? 'bg-emerald-500' : isZero ? 'bg-red-500' : 'bg-amber-500'}`}
-                    style={{ width: `${taskPercent}%` }}
-                  />
-                </div>
-              </div>
-              <h5 className="text-lg font-bold text-slate-800 leading-snug">{res.question}</h5>
-            </div>
+      {/* Detailed Tasks Breakdown */}
+      <div className="space-y-6">
+        <h3 className="text-xl font-bold text-slate-800 px-2">Task Details</h3>
+        {results.map((res: any, i: number) => {
+          const taskPercent = res.max_points > 0 ? (res.achieved_points / res.max_points) * 100 : 0;
+          const isFull = res.achieved_points === res.max_points;
+          const isZero = res.achieved_points === 0;
 
-            <div className={`shrink-0 flex flex-col items-end`}>
-              <span className={`text-2xl font-black ${isFull ? 'text-emerald-600' : isZero ? 'text-red-500' : 'text-amber-600'}`}>
-                {res.achieved_points} / {res.max_points}
-              </span>
-              <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">Points</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column: Feedback & Explanation */}
-            <div className="space-y-6">
-              <div>
-                <h6 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Feedback</h6>
-                <p className="text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-2xl">{res.feedback.summary}</p>
-              </div>
-
-              {res.feedback.correct_solution?.explanation && (
-                <div>
-                  <h6 className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4" /> Correct Solution
-                  </h6>
-                  <p className="text-slate-600 italic leading-relaxed pl-4 border-l-4 border-indigo-200">
-                    {res.feedback.correct_solution.explanation}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Right Column: Good/Improve & Strengths */}
-            <div className="space-y-4">
-              {res.feedback.what_was_good?.length > 0 && (
-                <div className="bg-emerald-50/50 border border-emerald-100 p-5 rounded-2xl">
-                  <h6 className="text-sm font-bold text-emerald-700 flex items-center gap-2 mb-3">
-                    <CheckCircle className="w-4 h-4" /> What went well
-                  </h6>
-                  <ul className="text-sm text-slate-700 space-y-2">
-                    {res.feedback.what_was_good.map((item: string, idx: number) => (
-                      <li key={idx} className="flex gap-3">
-                        <span className="text-emerald-500 font-bold mt-0.5">•</span>
-                        <span className="leading-relaxed">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {res.feedback.what_to_improve?.length > 0 && (
-                <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
-                  <h6 className="text-sm font-bold text-amber-700 flex items-center gap-2 mb-3">
-                    <AlertCircle className="w-4 h-4" /> Areas for improvement
-                  </h6>
-                  <ul className="text-sm text-slate-700 space-y-2">
-                    {res.feedback.what_to_improve.map((item: string, idx: number) => (
-                      <li key={idx} className="flex gap-3">
-                        <span className="text-amber-500 font-bold mt-0.5">•</span>
-                        <span className="leading-relaxed">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {res.strengths?.length > 0 && (
-                <div className="pt-2">
-                  <div className="flex flex-wrap gap-2">
-                    {res.strengths.map((str: string, idx: number) => (
-                      <span key={idx} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold ring-1 ring-indigo-200/50 shadow-sm">
-                        💪 {str}
-                      </span>
-                    ))}
+          return (
+            <div key={i} className={`bg-white p-6 md:p-8 rounded-3xl border-2 transition-all duration-300 shadow-sm hover:shadow-md ${isFull ? 'border-emerald-100 hover:border-emerald-300' : isZero ? 'border-red-100 hover:border-red-300' : 'border-amber-100 hover:border-amber-300'}`}>
+              {/* Task Header */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-100">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className={`px-3 py-1 rounded-lg text-sm font-bold ${isFull ? 'bg-emerald-100 text-emerald-700' : isZero ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                      Task {res.label}
+                    </span>
+                    <div className="h-2 flex-1 max-w-[200px] bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${isFull ? 'bg-emerald-500' : isZero ? 'bg-red-500' : 'bg-amber-500'}`}
+                        style={{ width: `${taskPercent}%` }}
+                      />
+                    </div>
                   </div>
+                  <h5 className="text-lg font-bold text-slate-800 leading-snug">{res.question}</h5>
                 </div>
-              )}
+
+                <div className={`shrink-0 flex flex-col items-end`}>
+                  <span className={`text-2xl font-black ${isFull ? 'text-emerald-600' : isZero ? 'text-red-500' : 'text-amber-600'}`}>
+                    {res.achieved_points} / {res.max_points}
+                  </span>
+                  <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">Points</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column: Feedback & Explanation */}
+                <div className="space-y-6">
+                  <div>
+                    <h6 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Feedback</h6>
+                    <p className="text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-2xl">{res.feedback.summary}</p>
+                  </div>
+
+                  {res.feedback.correct_solution?.explanation && (
+                    <div>
+                      <h6 className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4" /> Correct Solution
+                      </h6>
+                      <p className="text-slate-600 italic leading-relaxed pl-4 border-l-4 border-indigo-200">
+                        {res.feedback.correct_solution.explanation}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column: Good/Improve & Strengths */}
+                <div className="space-y-4">
+                  {res.feedback.what_was_good?.length > 0 && (
+                    <div className="bg-emerald-50/50 border border-emerald-100 p-5 rounded-2xl">
+                      <h6 className="text-sm font-bold text-emerald-700 flex items-center gap-2 mb-3">
+                        <CheckCircle className="w-4 h-4" /> What went well
+                      </h6>
+                      <ul className="text-sm text-slate-700 space-y-2">
+                        {res.feedback.what_was_good.map((item: string, idx: number) => (
+                          <li key={idx} className="flex gap-3">
+                            <span className="text-emerald-500 font-bold mt-0.5">•</span>
+                            <span className="leading-relaxed">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {res.feedback.what_to_improve?.length > 0 && (
+                    <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
+                      <h6 className="text-sm font-bold text-amber-700 flex items-center gap-2 mb-3">
+                        <AlertCircle className="w-4 h-4" /> Areas for improvement
+                      </h6>
+                      <ul className="text-sm text-slate-700 space-y-2">
+                        {res.feedback.what_to_improve.map((item: string, idx: number) => (
+                          <li key={idx} className="flex gap-3">
+                            <span className="text-amber-500 font-bold mt-0.5">•</span>
+                            <span className="leading-relaxed">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {res.strengths?.length > 0 && (
+                    <div className="pt-2">
+                      <div className="flex flex-wrap gap-2">
+                        {res.strengths.map((str: string, idx: number) => (
+                          <span key={idx} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold ring-1 ring-indigo-200/50 shadow-sm">
+                            💪 {str}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      );
-    })}
+          );
+        })}
+      </div>
     </div>
-  </div>
   );
 }
 // ==========================================
@@ -1368,8 +1351,8 @@ function FlashcardsTab({
             onClick={handleGenerate}
             disabled={isGenerating}
             className={`w-full max-w-sm mx-auto py-5 rounded-2xl font-semibold flex items-center justify-center gap-3 transition-all shadow-md text-lg ${isGenerating
-                ? 'bg-slate-100 text-slate-500 cursor-wait shadow-none'
-                : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-xl hover:-translate-y-1'
+              ? 'bg-slate-100 text-slate-500 cursor-wait shadow-none'
+              : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-xl hover:-translate-y-1'
               }`}
           >
             {isGenerating ? (
@@ -1450,7 +1433,7 @@ function FlashcardsTab({
               <Download className="w-6 h-6" />
               💾 Download CSV for Anki / RemNote
             </button>
-            
+
             <button
               onClick={() => { setCsvContent(null); setFlashcards([]); }}
               className="w-full py-2 text-sm text-slate-400 hover:text-slate-600 transition-colors"
