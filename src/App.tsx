@@ -12,6 +12,7 @@ import {
   Loader2,
   ChevronRight,
   Library,
+  ExternalLink,
   FileBadge,
   AlertCircle,
   Sparkles,
@@ -25,6 +26,7 @@ import {
   uploadKnowledge,
   fetchExams,
   generateExam,
+  deleteExam,
   submitFeedback,
   deleteCourse,
   deleteKnowledge,
@@ -163,7 +165,7 @@ export default function App() {
             <BookOpen className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent tracking-tight">
-            University Acer
+            ExamAI
           </h1>
         </div>
 
@@ -279,7 +281,7 @@ export default function App() {
               <BookOpen className="w-10 h-10 text-indigo-500" />
             </div>
             <h2 className="text-3xl font-bold text-slate-800 mb-3 tracking-tight">
-              Welcome to University Acer!
+              Welcome to ExamAI!
             </h2>
             <p className="text-slate-500 mb-10 max-w-md text-center text-lg leading-relaxed">
               Select a course from the sidebar or create a new one to start your preparation.
@@ -638,6 +640,7 @@ function GeneratorTab({
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [fileName, setFileName] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
@@ -666,11 +669,27 @@ function GeneratorTab({
     window.open(pdfUrl, '_blank');
   };
 
+  const handleDeleteExam = async (examId: number, name: string) => {
+    if (!window.confirm(`Do you want to delete the exam "${name}"?`)) return;
+    setIsDeletingId(examId);
+    try {
+      await deleteExam(courseId, examId);
+      onRefresh();
+    } catch (err) {
+      alert('Error deleting exam');
+    } finally {
+      setIsDeletingId(null);
+    }
+  };
+
   const getExamStatusBadge = (exam: GeneratedExam) => {
     if (exam.url) {
       return <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">Ready</span>;
     }
     const s = exam.status?.toLowerCase() || '';
+    if (s === 'failed') {
+      return <span className="px-2 py-0.5 bg-red-50 text-red-700 rounded-full text-xs font-semibold flex items-center gap-1"><AlertCircle className="w-3 h-3" />Failed</span>;
+    }
     if (s === 'processing' || s === 'in progress' || !exam.url) {
       return <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" />Generating</span>;
     }
@@ -791,16 +810,16 @@ function GeneratorTab({
       </div>
 
       {/* Generated Exams List */}
-      {exams.length > 0 && (
+      {exams.filter(e => e.status?.toLowerCase() !== 'failed').length > 0 && (
         <div>
           <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-indigo-500" />
             Generated Exams
-            <span className="text-xs text-slate-400 font-normal">({exams.length})</span>
+            <span className="text-xs text-slate-400 font-normal">({exams.filter(e => e.status?.toLowerCase() !== 'failed').length})</span>
           </h4>
 
           <div className="space-y-3">
-            {exams.map((exam) => (
+            {exams.filter(e => e.status?.toLowerCase() !== 'failed').map((exam) => (
               <div
                 key={exam.id}
                 className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
@@ -823,14 +842,26 @@ function GeneratorTab({
                     <button
                       onClick={() => handleDownloadPdf(exam.url!)}
                       className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 hover:text-indigo-600 hover:border-indigo-300 hover:shadow-md transition-all flex items-center gap-2 text-sm"
-                      title="Download PDF"
+                      title="View PDF"
                     >
-                      <Download className="w-4 h-4" />
-                      Download PDF
+                      <ExternalLink className="w-4 h-4" />
+                      View PDF
                     </button>
-                  ) : (
+                  ) : exam.status?.toLowerCase() === 'failed' ? null : (
                     <span className="text-xs text-slate-400 italic">Generating...</span>
                   )}
+                  <button
+                    onClick={() => handleDeleteExam(exam.id, exam.file_name || `Exam #${exam.id}`)}
+                    disabled={isDeletingId === exam.id}
+                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete Exam"
+                  >
+                    {isDeletingId === exam.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
               </div>
             ))}
@@ -891,14 +922,14 @@ function FeedbackTab({
             Select a generated exam to upload your solution and receive feedback.
           </p>
 
-          {exams.length === 0 ? (
+          {exams.filter(e => e.status?.toLowerCase() !== 'failed').length === 0 ? (
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center text-slate-500">
               <AlertCircle className="w-6 h-6 mx-auto mb-3 text-slate-400" />
-              No exams available. Generate one in the Exam Generator tab first.
+              No exams available (failed exams are not shown). Generate one in the Exam Generator tab first.
             </div>
           ) : (
             <div className="space-y-3">
-              {exams.map((exam) => (
+              {exams.filter(e => e.status?.toLowerCase() !== 'failed').map((exam) => (
                 <button
                   key={exam.id}
                   onClick={() => {

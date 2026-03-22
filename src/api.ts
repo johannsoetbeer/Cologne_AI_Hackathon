@@ -137,6 +137,14 @@ export async function generateExam(courseId: number, prompt: string, fileName: s
   return res.json();
 }
 
+export async function deleteExam(courseId: number, examId: number): Promise<{ message: string }> {
+  const res = await fetch(`${API_BASE}/courses/${courseId}/exams/${examId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Error deleting exam');
+  return res.json();
+}
+
 // ==========================================
 // Feedback
 // ==========================================
