@@ -229,10 +229,11 @@ async function compileLatexToPdf(latexCode) {
     fs.writeFileSync(texFile, latexCode, 'utf-8');
 
     // Run pdflatex twice (for references, TOC, etc.)
+    const pdflatexPath = '"C:\\Users\\milic\\AppData\\Local\\Programs\\MiKTeX\\miktex\\bin\\x64\\pdflatex.exe"';
     for (let pass = 1; pass <= 2; pass++) {
       try {
         execSync(
-          `pdflatex -interaction=nonstopmode -output-directory="${tmpDir}" "${texFile}"`,
+          `${pdflatexPath} -interaction=nonstopmode -output-directory="${tmpDir}" "${texFile}"`,
           { timeout: 30000, stdio: 'pipe' }
         );
         console.log(`  ✅ pdflatex pass ${pass} succeeded`);
@@ -547,7 +548,7 @@ Generate the LaTeX exam now.`;
       console.error('❌ LaTeX compilation failed:', compileErr.message);
       // Return the LaTeX code so the user can debug, but still save it with no URL
       const dbResult = await pool.query(
-        'INSERT INTO public.generated_exams (course_id, file_name) VALUES ($1, $2) RETURNING *',
+        "INSERT INTO public.generated_exams (course_id, file_name, status) VALUES ($1, $2, 'failed') RETURNING *",
         [courseId, fileName ? fileName.trim() : null]
       );
       const result = await pool.query(
@@ -569,17 +570,11 @@ Generate the LaTeX exam now.`;
     const pdfUrl = cloudinaryResult.secure_url;
     console.log(`✅ Uploaded to Cloudinary: ${pdfUrl}`);
 
-    // ───── Step 7: Insert exam record into DB with URL ─────
-    const dbResult = await pool.query(
-      'INSERT INTO public.generated_exams (course_id, file_name, url) VALUES ($1, $2, $3) RETURNING *',
-      [courseId, fileName ? fileName.trim() : safeName, pdfUrl]
-    );
-    const newExam = dbResult.rows[0];
-
-    console.log(`✅ Exam saved to DB: id=${newExam.id}, url=${pdfUrl}`);
+    // ───── Step 7: Setup Solution variables ─────
+    let solutionUrl = null;
 
     // ───── Step 8: Generate Sample Solution (Musterlösung) ─────
-    console.log(`🤖 Generating sample solution for exam ${newExam.id}...`);
+    console.log(`🤖 Generating sample solution for exam ${safeName}...`);
     try {
       const solutionSystemPrompt = `You are an expert university professor and LaTeX typesetter.
 Your ONLY job: write the SAMPLE SOLUTION (Musterlösung) for the provided LaTeX exam.
@@ -656,22 +651,22 @@ Write the complete Sample Solution (Musterlösung) LaTeX document now. Make sure
 
       console.log('☁️  Uploading Solution PDF to Cloudinary...');
       const solCloudinaryResult = await uploadPdfToCloudinary(solPdfBuffer, `solution_${safeName}_${Date.now()}`);
-      const solutionUrl = solCloudinaryResult.secure_url;
+      solutionUrl = solCloudinaryResult.secure_url;
       console.log(`✅ Uploaded Solution to Cloudinary: ${solutionUrl}`);
-
-      // Update the evaluation_url on the same row in generated_exams
-      await pool.query(
-        'UPDATE public.generated_exams SET evaluation_url = $1 WHERE id = $2',
-        [solutionUrl, newExam.id]
-      );
-      newExam.evaluation_url = solutionUrl;
-      console.log('✅ Solution URL attached to DB record');
     } catch (solErr) {
       console.error('❌ Failed to generate/upload sample solution:', solErr.message);
       // We don't fail the whole API request, so the user at least gets the Exam.
     }
 
-    // ───── Step 9: Return result ─────
+    // ───── Step 9: Insert exam record into DB with URL & Solution URL ─────
+    const dbResult = await pool.query(
+      "INSERT INTO public.generated_exams (course_id, file_name, url, evaluation_url, status) VALUES ($1, $2, $3, $4, 'ready') RETURNING *",
+      [courseId, fileName ? fileName.trim() : safeName, pdfUrl, solutionUrl]
+    );
+    const newExam = dbResult.rows[0];
+    console.log(`✅ Exam saved to DB: id=${newExam.id}, url=${pdfUrl}`);
+
+    // Return result
     const result = await pool.query(
       'SELECT * FROM public.generated_exams WHERE course_id = $1 ORDER BY id DESC',
       [courseId]
@@ -685,6 +680,21 @@ Write the complete Sample Solution (Musterlösung) LaTeX document now. Make sure
   } catch (err) {
     console.error('POST /api/exams/generate error:', err);
     res.status(500).json({ error: 'Generation failed: ' + err.message });
+  }
+});
+
+// DELETE generated exam
+app.delete('/api/courses/:courseId/exams/:examId', async (req, res) => {
+  const { courseId, examId } = req.params;
+  try {
+    const result = await pool.query('DELETE FROM public.generated_exams WHERE id = $1 AND course_id = $2 RETURNING *', [examId, courseId]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Exam not found' });
+    }
+    res.json({ message: 'Exam deleted', deleted: result.rows[0] });
+  } catch (err) {
+    console.error('DELETE /api/exams error:', err);
+    res.status(500).json({ error: 'Error deleting exam' });
   }
 });
 
@@ -775,5 +785,5 @@ app.get('/api/health', async (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 University Acer API running on http://localhost:${PORT}`);
+  console.log(`🚀 ExamAI API running on http://localhost:${PORT}`);
 });
