@@ -1,4 +1,7 @@
-# ExamAI
+# ExamAI 🚀
+
+> [!NOTE]
+> **🚧 Work in Progress:** This project is currently under development as part of a Hackathon.
 
 ExamAI is a full-stack web application that allows university students and professors to automatically generate custom practice exams and flashcards based on lecture slides, scripts, and previous exams. It uses AI to analyze documents, extract text, generate LaTeX code for the exam, and finally compile it into a PDF. It also features a "Correction & Feedback" mode that automatically grades student attempts.
 
@@ -78,9 +81,9 @@ PORT=3001
 # PDFLATEX_PATH="C:\path\to\pdflatex.exe"
 
 > [!TIP]
-> **Wann brauche ich den `PDFLATEX_PATH`?**
-> - **In der Regel NICHT:** Wenn `pdflatex` im Systempfad (PATH) liegt, wird es automatisch gefunden.
-> - **Wann DOCH?** Wenn du LaTeX an einem speziellen Ort installiert hast, den das System nicht kennt (häufig bei MiKTeX auf Windows), oder wenn du eine ganz bestimmte Version erzwingen willst.
+> **When do I need `PDFLATEX_PATH`?**
+> - **Usually NOT:** If `pdflatex` is in your system PATH, it will be found automatically.
+> - **When YES:** If you have LaTeX installed in a custom location (common with MiKTeX on Windows) or if you want to force a specific version.
 ```
 
 ---
