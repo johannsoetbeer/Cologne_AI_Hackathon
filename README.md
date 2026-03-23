@@ -3,7 +3,7 @@
 > [!NOTE]
 > **🚧 Work in Progress:** This project is currently under development. As a team, we started working on this during Köln AI Hackathon.
 
-ExamAI is a full-stack web application that allows university students and professors to automatically generate custom practice exams and flashcards based on lecture slides, scripts, and previous exams. It uses AI to analyze documents, extract text, generate LaTeX code for the exam, and finally compile it into a PDF. It also features a "Correction & Feedback" mode that automatically grades student attempts.
+ExamAI is a full-stack web application that allows university students to automatically generate custom practice exams and flashcards based on lecture slides, scripts, and previous exams. It uses AI to analyze documents, extract text, generate LaTeX code for the exam, and finally compile it into a PDF. It also features a "Correction & Feedback" mode that automatically grades student attempts.
 
 ## Features
 
