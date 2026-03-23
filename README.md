@@ -72,6 +72,15 @@ N8N_WEBHOOK_FLASHCARDS=https://your-n8n-instance/webhook/...
 
 # Backend Port
 PORT=3001
+
+# LaTeX Configuration (Optional: path to pdflatex executable if not in PATH)
+# PDFLATEX_PATH=/path/to/pdflatex
+# PDFLATEX_PATH="C:\path\to\pdflatex.exe"
+
+> [!TIP]
+> **Wann brauche ich den `PDFLATEX_PATH`?**
+> - **In der Regel NICHT:** Wenn `pdflatex` im Systempfad (PATH) liegt, wird es automatisch gefunden.
+> - **Wann DOCH?** Wenn du LaTeX an einem speziellen Ort installiert hast, den das System nicht kennt (häufig bei MiKTeX auf Windows), oder wenn du eine ganz bestimmte Version erzwingen willst.
 ```
 
 ---

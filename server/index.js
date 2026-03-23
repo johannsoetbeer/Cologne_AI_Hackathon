@@ -229,7 +229,8 @@ async function compileLatexToPdf(latexCode) {
     fs.writeFileSync(texFile, latexCode, 'utf-8');
 
     // Run pdflatex twice (for references, TOC, etc.)
-    const pdflatexPath = '"C:\\Users\\milic\\AppData\\Local\\Programs\\MiKTeX\\miktex\\bin\\x64\\pdflatex.exe"';
+    const pdflatexPath = process.env.PDFLATEX_PATH || (process.platform === 'win32' ? 'pdflatex' : 'pdflatex');
+    // Note: If 'pdflatex' is not in PATH, users can specify the full path in .env
     for (let pass = 1; pass <= 2; pass++) {
       try {
         execSync(
