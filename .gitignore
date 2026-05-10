@@ -28,3 +28,6 @@ venv/
 __pycache__/
 .vscode/
 *.pyc
+
+# files
+extracted_exam*
