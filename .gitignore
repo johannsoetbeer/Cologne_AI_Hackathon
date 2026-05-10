@@ -30,4 +30,4 @@ __pycache__/
 *.pyc
 
 # files
-extracted_exam*
+extracted_*
